@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Design system da ViaFluxo, marketplace logístico para empresas e transportadores.">
+  <title>ViaFluxo — Design system</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+  <header class="ds-header">
+    <a class="brand" href="#inicio" aria-label="ViaFluxo Design System">
+      <span class="brand-symbol" aria-hidden="true"></span>
+      <span class="brand-name">ViaFluxo</span>
+      <span class="brand-tag">DS 01</span>
+    </a>
+
+    <nav class="ds-nav" aria-label="Seções do design system">
+      <a class="is-active" href="#fundamentos">Fundamentos</a>
+      <a href="#componentes">Componentes</a>
+      <a href="#aplicacoes">Aplicações</a>
+    </nav>
+
+    <a class="button button-dark button-compact" href="../index.html">
+      Ver protótipo <span aria-hidden="true">↗</span>
+    </a>
+  </header>
+
+  <main>
+    <section class="cover" id="inicio">
+      <div class="cover-grid">
+        <div class="cover-copy">
+          <span class="eyebrow eyebrow-light">Movendo entregas, conectando oportunidades.</span>
+          <h1>Confiança para mover cada rota.</h1>
+          <p>
+            Uma linguagem visual clara, humana e operacional para conectar
+            Empresas, transportadores e entregas em um só fluxo.
+          </p>
+          <div class="cover-actions">
+            <a class="button button-accent" href="#fundamentos">Explorar sistema</a>
+            <a class="button button-glass" href="#aplicacoes">Ver em contexto</a>
+          </div>
+        </div>
+
+        <div class="route-visual" aria-label="Exemplo visual de uma rota em leilão">
+          <div class="route-map">
+            <span class="map-label label-origin">VIX</span>
+            <span class="map-label label-destination">CGR</span>
+            <span class="route-dot route-dot-start"></span>
+            <span class="route-line"></span>
+            <span class="route-truck" aria-hidden="true">▰</span>
+            <span class="route-dot route-dot-end"></span>
+          </div>
+          <article class="floating-card floating-card-main">
+            <div>
+              <span class="overline">LEILÃO #0248</span>
+              <strong>Vitória → Campos</strong>
+            </div>
+            <span class="status status-live"><i></i> Ao vivo</span>
+          </article>
+          <article class="floating-card floating-card-price">
+            <span>Melhor oferta</span>
+            <strong>R$ 238</strong>
+            <small>↓ 12% do teto</small>
+          </article>
+        </div>
+      </div>
+
+      <div class="cover-stats">
+        <div><strong>08</strong><span>cores essenciais</span></div>
+        <div><strong>04</strong><span>níveis de elevação</span></div>
+        <div><strong>AA</strong><span>contraste mínimo</span></div>
+        <div><strong>8 px</strong><span>grade de espaçamento</span></div>
+      </div>
+    </section>
+
+    <section class="ds-section" id="fundamentos">
+      <div class="section-intro">
+        <div>
+          <span class="section-index">01.</span>
+          <span class="eyebrow">Fundamentos</span>
+        </div>
+        <h2>Base para uma experiência consistente.</h2>
+        <p>
+          Branco traz clareza. Azul constrói confiança. Amarelo marca decisões.
+          Laranja aparece somente quando a operação exige atenção imediata.
+        </p>
+      </div>
+
+      <div class="color-grid">
+        <button class="color-card color-card-wide brand-900" data-copy="#062B55" type="button">
+          <span>Azul confiança</span><strong>#062B55</strong><small>Marca · fundos · textos de impacto</small>
+        </button>
+        <button class="color-card brand-600" data-copy="#0874DF" type="button">
+          <span>Azul ação</span><strong>#0874DF</strong><small>CTA · links · foco</small>
+        </button>
+        <button class="color-card accent-500" data-copy="#FFC928" type="button">
+          <span>Amarelo decisão</span><strong>#FFC928</strong><small>Destaque · seleção</small>
+        </button>
+        <button class="color-card urgent-500" data-copy="#F36A21" type="button">
+          <span>Laranja urgência</span><strong>#F36A21</strong><small>SLA · encerramento</small>
+        </button>
+        <button class="color-card ink-950" data-copy="#101419" type="button">
+          <span>Preto operacional</span><strong>#101419</strong><small>Texto · contraste</small>
+        </button>
+        <button class="color-card canvas" data-copy="#E8EEF2" type="button">
+          <span>Cinza plataforma</span><strong>#E8EEF2</strong><small>Plano de fundo</small>
+        </button>
+      </div>
+
+      <div class="type-layout">
+        <article class="type-display">
+          <span class="component-label">Tipografia de impacto</span>
+          <p class="type-sample">Rotas que movem oportunidades.</p>
+          <div class="type-meta">
+            <strong>Space Grotesk</strong>
+            <span>Semibold / Bold</span>
+            <span>Títulos, números e rotas</span>
+          </div>
+        </article>
+        <article class="type-body">
+          <span class="component-label">Tipografia funcional</span>
+          <h3>Informação clara em qualquer etapa</h3>
+          <p>
+            Manrope mantém detalhes de carga, prazo, preço e documentação
+            legíveis em telas operacionais densas.
+          </p>
+          <div class="alphabet">Aa Bb Cc 0123 R$</div>
+          <div class="type-meta">
+            <strong>Manrope</strong>
+            <span>Regular / Medium / Bold</span>
+            <span>Interface e conteúdo</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="foundation-row">
+        <article class="foundation-card">
+          <span class="component-label">Espaçamento</span>
+          <div class="space-scale" aria-label="Escala de espaçamento">
+            <i style="--size: 8px"></i>
+            <i style="--size: 16px"></i>
+            <i style="--size: 24px"></i>
+            <i style="--size: 32px"></i>
+            <i style="--size: 48px"></i>
+            <i style="--size: 64px"></i>
+          </div>
+          <p>8 · 16 · 24 · 32 · 48 · 64</p>
+        </article>
+        <article class="foundation-card">
+          <span class="component-label">Cantos</span>
+          <div class="radius-scale">
+            <i class="radius-sm"></i><i class="radius-md"></i>
+            <i class="radius-lg"></i><i class="radius-xl"></i>
+          </div>
+          <p>10 · 16 · 24 · 36</p>
+        </article>
+        <article class="foundation-card">
+          <span class="component-label">Elevação</span>
+          <div class="shadow-scale">
+            <i></i><i></i><i></i>
+          </div>
+          <p>Borda · baixa · média</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="ds-section section-tinted" id="componentes">
+      <div class="section-intro">
+        <div>
+          <span class="section-index">02.</span>
+          <span class="eyebrow">Componentes</span>
+        </div>
+        <h2>Peças prontas para a operação.</h2>
+        <p>
+          Os componentes priorizam leitura rápida e ações inequívocas, mantendo
+          o aspecto editorial e sofisticado da referência.
+        </p>
+      </div>
+
+      <div class="component-grid">
+        <article class="showcase-card showcase-buttons">
+          <span class="component-label">Botões</span>
+          <div class="button-row">
+            <button class="button button-primary" type="button">Publicar rota <span>→</span></button>
+            <button class="button button-dark" type="button">Ver ofertas <span>↗</span></button>
+            <button class="button button-secondary" type="button">Salvar rascunho</button>
+            <button class="button button-ghost-dark" type="button">Cancelar</button>
+          </div>
+          <small>Altura mínima 48 px · ação principal sempre explícita</small>
+        </article>
+
+        <article class="showcase-card">
+          <span class="component-label">Status</span>
+          <div class="status-row">
+            <span class="status status-live"><i></i> Leilão aberto</span>
+            <span class="status status-success">Aprovado</span>
+            <span class="status status-warning">Em análise</span>
+            <span class="status status-danger">SLA em risco</span>
+            <span class="status status-neutral">Rascunho</span>
+          </div>
+        </article>
+
+        <article class="showcase-card form-showcase">
+          <span class="component-label">Campos</span>
+          <div class="field-row">
+            <label class="field">
+              <span>Origem</span>
+              <input type="text" value="Vitória, ES">
+              <small>Unidade de coleta</small>
+            </label>
+            <label class="field">
+              <span>Tipo de veículo</span>
+              <select>
+                <option>Fiorino ou van</option>
+              </select>
+              <small>Capacidade mínima: 800 kg</small>
+            </label>
+          </div>
+        </article>
+
+        <article class="showcase-card navigation-showcase">
+          <span class="component-label">Navegação</span>
+          <div class="app-nav">
+            <a class="brand brand-small" href="#inicio" aria-label="ViaFluxo">
+              <span class="brand-symbol" aria-hidden="true"></span><span class="brand-name">ViaFluxo</span>
+            </a>
+            <div>
+              <a class="is-current" href="#componentes">Painel</a>
+              <a href="#componentes">Rotas</a>
+              <a href="#componentes">Parceiros</a>
+            </div>
+            <button class="avatar" type="button" aria-label="Abrir perfil">ES</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="ds-section" id="aplicacoes">
+      <div class="section-intro">
+        <div>
+          <span class="section-index">03.</span>
+          <span class="eyebrow">Aplicações</span>
+        </div>
+        <h2>O sistema em situações reais.</h2>
+        <p>
+          Exemplos mostram como preço, reputação e urgência convivem sem
+          competir pela atenção de quem decide.
+        </p>
+      </div>
+
+      <div class="application-grid">
+        <article class="route-card">
+          <div class="card-topline">
+            <span class="status status-live"><i></i> Recebendo ofertas</span>
+            <span class="route-id">#TR-0248</span>
+          </div>
+          <div class="route-points">
+            <div>
+              <span>Origem</span>
+              <strong>Vitória, ES</strong>
+              <small>Coleta · Hoje, 08:30</small>
+            </div>
+            <div class="route-arrow"><i></i><span>522 km</span></div>
+            <div>
+              <span>Destino</span>
+              <strong>Campos, RJ</strong>
+              <small>Entrega · Até 18:00</small>
+            </div>
+          </div>
+          <div class="route-data">
+            <div><span>Carga</span><strong>Vidros + peças</strong></div>
+            <div><span>Peso</span><strong>210 kg</strong></div>
+            <div><span>Veículo</span><strong>Fiorino / Van</strong></div>
+            <div><span>Ofertas</span><strong>08 propostas</strong></div>
+          </div>
+          <div class="route-card-footer">
+            <div><span>Encerra em</span><strong class="countdown">00:18:42</strong></div>
+            <button class="button button-primary" type="button">Comparar ofertas →</button>
+          </div>
+        </article>
+
+        <aside class="bid-panel">
+          <div class="bid-panel-heading">
+            <div>
+              <span class="overline">MELHOR COMBINAÇÃO</span>
+              <h3>Oferta recomendada</h3>
+            </div>
+            <span class="score">96</span>
+          </div>
+          <div class="partner">
+            <span class="partner-avatar">LE</span>
+            <div><strong>Lucas Entregas</strong><span>Fiorino 2023 · Verificado</span></div>
+            <span class="rating">★ 4,9</span>
+          </div>
+          <div class="bid-value">
+            <span>Valor proposto</span>
+            <strong>R$ 238,00</strong>
+            <small>12% abaixo do teto da rota</small>
+          </div>
+          <ul class="trust-list">
+            <li><i>✓</i> 97% das entregas no prazo</li>
+            <li><i>✓</i> Documentação e seguro válidos</li>
+            <li><i>✓</i> 42 entregas concluídas</li>
+          </ul>
+          <button class="button button-dark button-full" type="button">Selecionar parceiro</button>
+        </aside>
+      </div>
+    </section>
+
+    <section class="reference-section">
+      <div class="reference-copy">
+        <span class="eyebrow eyebrow-light">Direção visual</span>
+        <h2>Da referência à identidade ViaFluxo.</h2>
+        <p>
+          Mantivemos a composição limpa, os cartões arredondados, a tipografia
+          expressiva e o contraste forte. A camada logística foi redesenhada
+          para o contexto de leilões, confiança e acompanhamento de rotas.
+        </p>
+      </div>
+      <figure class="reference-image">
+        <img src="references/transport.webp" alt="Referência visual de uma página moderna de logística">
+        <figcaption>Referência fornecida · composição e linguagem</figcaption>
+      </figure>
+    </section>
+  </main>
+
+  <footer class="ds-footer">
+    <a class="brand brand-footer" href="#inicio">
+      <span class="brand-symbol" aria-hidden="true"></span><span class="brand-name">ViaFluxo</span>
+    </a>
+    <p>Movendo entregas, conectando oportunidades.</p>
+    <a href="#inicio">Voltar ao topo ↑</a>
+  </footer>
+
+  <div class="copy-toast" role="status" aria-live="polite">Cor copiada</div>
+  <script src="script.js"></script>
+</body>
+</html>
