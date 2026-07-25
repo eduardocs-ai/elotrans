@@ -3047,7 +3047,7 @@ textarea:focus {
   grid-template-columns: minmax(0, 0.9fr) minmax(420px, 0.75fr);
   gap: var(--space-7);
   align-items: center;
-  margin: 0 16px;
+  margin: 0;
   padding:
     150px max(28px, calc((100vw - 1240px) / 2))
     150px;
