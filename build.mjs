@@ -8,6 +8,9 @@ const sourceFiles = [
   "index.html",
   "styles.css",
   "script.js",
+  "manifest.webmanifest",
+  "service-worker.js",
+  "Design system/tokens.css",
   "assets/brand-logo-source.png",
   "assets/brand-symbol-chroma.png",
   "assets/brand-symbol.png",
@@ -17,6 +20,7 @@ const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
   ".png": "image/png",
 };
 

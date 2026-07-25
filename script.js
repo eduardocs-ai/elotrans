@@ -74,6 +74,9 @@ const NAVIGATION = {
 const pageShell = document.querySelector(".page-shell");
 const appShell = document.querySelector("#app-shell");
 const appNav = document.querySelector("#app-nav");
+const appMobileNav = document.querySelector("#app-mobile-nav");
+const appMenuBackdrop = document.querySelector("#app-menu-backdrop");
+const mobileMenuButton = document.querySelector("#mobile-menu");
 const appContent = document.querySelector("#app-content");
 const appPageTitle = document.querySelector("#app-page-title");
 const appSectionLabel = document.querySelector("#app-section-label");
@@ -112,6 +115,7 @@ const offerDialog = document.querySelector("#offer-dialog");
 const offerForm = document.querySelector("#offer-form");
 const offerRouteName = document.querySelector("#offer-route-name");
 const toast = document.querySelector("#product-toast");
+const installAppButtons = [...document.querySelectorAll(".install-app-button")];
 const pickupInput = routeForm?.elements.pickup;
 const routeWizardSteps = [...document.querySelectorAll("[data-route-step]")];
 const routeWizardIndicators = [...document.querySelectorAll("[data-route-step-indicator]")];
@@ -148,6 +152,7 @@ let selectedDeliveryChatRouteId = null;
 let currentPreviewUrl = null;
 let currentApprovalEmailHtml = "";
 let toastTimeout;
+let deferredInstallPrompt = null;
 
 function readStorage(key, fallback) {
   try {
@@ -1008,9 +1013,58 @@ function logout() {
   localStorage.removeItem(STORAGE_KEYS.session);
   appShell.hidden = true;
   pageShell.hidden = false;
-  appShell.classList.remove("menu-open");
+  setAppMenuOpen(false);
   document.body.classList.remove("app-mode");
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function mobileNavigationItems(user) {
+  const preferred = {
+    admin: ["overview", "registrations", "operations", "occurrences"],
+    company: ["overview", "routes", "deliveries", "delivery-chat"],
+    carrier: ["overview", "opportunities", "deliveries", "delivery-chat"],
+  }[user.role] ?? [];
+  const navigation = availableNavigation(user);
+  const preferredItems = preferred
+    .map((id) => navigation.find(([navigationId]) => navigationId === id))
+    .filter(Boolean);
+  return preferredItems.length ? preferredItems : navigation.slice(0, 4);
+}
+
+function mobileNavigationLabel(id, label) {
+  const labels = {
+    overview: "Inicio",
+    registrations: "Cadastros",
+    operations: "Operacoes",
+    occurrences: "Alertas",
+    routes: "Rotas",
+    opportunities: "Rotas",
+    deliveries: "Entregas",
+    "delivery-chat": "Conversas",
+    verification: "Cadastro",
+    settings: "Ajustes",
+  };
+  return labels[id] ?? label;
+}
+
+function renderMobileNavigation() {
+  if (!appMobileNav) return;
+  const items = mobileNavigationItems(currentUser);
+  const itemIds = new Set(items.map(([id]) => id));
+  appMobileNav.innerHTML = items.map(([id, label]) => {
+    const mobileLabel = mobileNavigationLabel(id, label);
+    return `
+      <button type="button" data-section="${id}" class="${id === activeSection ? "is-active" : ""}">
+        <b aria-hidden="true">${escapeHtml(mobileLabel.slice(0, 1))}</b>
+        <span>${escapeHtml(mobileLabel)}</span>
+      </button>
+    `;
+  }).join("") + `
+    <button type="button" data-mobile-menu class="${itemIds.has(activeSection) ? "" : "is-active"}">
+      <b aria-hidden="true">M</b>
+      <span>Menu</span>
+    </button>
+  `;
 }
 
 function renderNavigation() {
@@ -1023,6 +1077,22 @@ function renderNavigation() {
     button.classList.toggle("is-active", id === activeSection);
     appNav.append(button);
   });
+  renderMobileNavigation();
+}
+
+function setAppMenuOpen(isOpen) {
+  appShell.classList.toggle("menu-open", isOpen);
+  mobileMenuButton?.setAttribute("aria-expanded", String(isOpen));
+}
+
+function navigateToAppSection(section) {
+  activeSection = section;
+  selectedOperationId = null;
+  selectedOccurrenceId = null;
+  selectedCompanyRouteId = null;
+  selectedCarrierRouteId = null;
+  setAppMenuOpen(false);
+  renderCurrentSection();
 }
 
 function renderCurrentSection() {
@@ -3599,13 +3669,16 @@ document.querySelector("#forgot-password").addEventListener("click", () => {
 appNav.addEventListener("click", (event) => {
   const button = event.target.closest("[data-section]");
   if (!button) return;
-  activeSection = button.dataset.section;
-  selectedOperationId = null;
-  selectedOccurrenceId = null;
-  selectedCompanyRouteId = null;
-  selectedCarrierRouteId = null;
-  appShell.classList.remove("menu-open");
-  renderCurrentSection();
+  navigateToAppSection(button.dataset.section);
+});
+
+appMobileNav?.addEventListener("click", (event) => {
+  const sectionButton = event.target.closest("[data-section]");
+  if (sectionButton) {
+    navigateToAppSection(sectionButton.dataset.section);
+    return;
+  }
+  if (event.target.closest("[data-mobile-menu]")) setAppMenuOpen(true);
 });
 
 appPrimaryAction.addEventListener("click", () => {
@@ -3906,9 +3979,41 @@ offerForm.addEventListener("submit", (event) => {
 });
 
 document.querySelector("#logout-button").addEventListener("click", logout);
-document.querySelector("#mobile-menu").addEventListener("click", () => {
-  appShell.classList.toggle("menu-open");
+mobileMenuButton.addEventListener("click", () => {
+  setAppMenuOpen(!appShell.classList.contains("menu-open"));
 });
+appMenuBackdrop?.addEventListener("click", () => setAppMenuOpen(false));
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  installAppButtons.forEach((button) => {
+    button.hidden = false;
+  });
+});
+
+installAppButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installAppButtons.forEach((installButton) => {
+      installButton.hidden = true;
+    });
+  });
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  installAppButtons.forEach((button) => {
+    button.hidden = true;
+  });
+  showToast("ViaFluxo instalado no dispositivo.");
+});
+
+window.addEventListener("online", () => showToast("Conexao restabelecida."));
+window.addEventListener("offline", () => showToast("Modo offline ativo. Seus dados locais continuam disponiveis."));
 
 window.addEventListener("storage", (event) => {
   if (event.key === STORAGE_KEYS.routes && currentUser && !appShell.hidden) {
@@ -3969,3 +4074,11 @@ seedAudits();
 
 const restoredUser = resolveSession();
 if (restoredUser) showApp(restoredUser);
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {
+      // The app remains usable online if service worker registration is unavailable.
+    });
+  });
+}

@@ -2909,6 +2909,13 @@ button {
   transform: translateX(-50%);
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .brand {
   width: max-content;
   display: inline-flex;
@@ -4332,6 +4339,11 @@ textarea:focus {
 .app-nav button.is-active::before {
   border-color: var(--color-accent-500);
   background: var(--color-accent-500);
+}
+
+.app-menu-backdrop,
+.app-mobile-nav {
+  display: none;
 }
 
 .sidebar-foot {
@@ -6559,6 +6571,317 @@ textarea:focus {
   .delivery-chat-history-note {
     align-items: center;
     flex-direction: column;
+  }
+}
+
+/* Installed app and mobile portal experience */
+@media (max-width: 820px) {
+  .app-sidebar {
+    width: min(82vw, 300px);
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  .app-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    display: block;
+    border: 0;
+    visibility: hidden;
+    opacity: 0;
+    background: rgba(3, 17, 32, 0.56);
+    backdrop-filter: blur(3px);
+    transition:
+      opacity var(--duration-base) var(--ease-standard),
+      visibility var(--duration-base) var(--ease-standard);
+  }
+
+  .app-shell.menu-open .app-menu-backdrop {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .app-mobile-nav {
+    position: fixed;
+    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 10px;
+    z-index: 30;
+    min-height: 66px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 3px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 22px;
+    background: rgba(6, 25, 46, 0.96);
+    box-shadow: 0 18px 44px rgba(4, 25, 48, 0.3);
+    backdrop-filter: blur(18px);
+  }
+
+  .app-mobile-nav button {
+    min-width: 0;
+    min-height: 52px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: 16px;
+    color: rgba(255, 255, 255, 0.54);
+    background: transparent;
+    font-weight: 800;
+  }
+
+  .app-mobile-nav button b {
+    width: 24px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    color: currentColor;
+    background: rgba(255, 255, 255, 0.08);
+    font-family: var(--font-display);
+    font-size: 0.58rem;
+  }
+
+  .app-mobile-nav button span {
+    width: 100%;
+    overflow: hidden;
+    font-size: 0.52rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-mobile-nav button.is-active {
+    color: #fff;
+    background: rgba(19, 129, 235, 0.28);
+  }
+
+  .app-mobile-nav button.is-active b {
+    color: var(--color-ink-950);
+    background: var(--color-accent-500);
+  }
+
+  .app-topbar {
+    min-height: 86px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: 14px;
+  }
+
+  .app-topbar h1 {
+    max-width: 34vw;
+    overflow: hidden;
+    font-size: clamp(1rem, 4vw, 1.25rem);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-content {
+    padding-top: 18px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    overscroll-behavior-y: contain;
+  }
+
+  .support-mode .app-content {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar-actions {
+    gap: 5px;
+  }
+
+  .topbar-actions .button {
+    min-height: 42px;
+    padding: 0 11px;
+    font-size: 0.62rem;
+  }
+
+  .app-main {
+    padding-inline: 10px;
+  }
+
+  .app-topbar {
+    min-height: 78px;
+    gap: 9px;
+  }
+
+  .app-topbar > div:nth-child(2) {
+    min-width: 0;
+    display: block;
+  }
+
+  .app-topbar > div:nth-child(2) .mini-label {
+    display: none;
+  }
+
+  .app-topbar h1 {
+    max-width: 30vw;
+    margin-top: 0;
+    font-size: 0.98rem;
+  }
+
+  .app-primary-action {
+    max-width: 108px;
+    min-height: 40px;
+    overflow: hidden;
+    padding-inline: 11px;
+    font-size: 0.58rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .notification-button,
+  .mobile-menu {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+  }
+
+  .app-top-actions {
+    gap: 6px;
+  }
+
+  .app-welcome {
+    min-height: 245px;
+    padding: 22px 20px;
+  }
+
+  .app-card {
+    border-radius: 18px;
+  }
+
+  .module-intro,
+  .operation-detail-hero,
+  .occurrence-detail-hero,
+  .carrier-opportunity-hero {
+    border-radius: 20px;
+  }
+
+  .module-summary {
+    flex-wrap: wrap;
+  }
+
+  .module-summary span {
+    min-width: calc(50% - 5px);
+  }
+
+  .operations-filter,
+  .user-directory-tabs {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .operations-filter::-webkit-scrollbar,
+  .user-directory-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .operations-filter button,
+  .user-directory-tab {
+    flex: 0 0 auto;
+  }
+
+  .company-route-row,
+  .carrier-opportunity-row,
+  .carrier-delivery-row {
+    padding: 17px 16px;
+  }
+
+  .company-route-actions,
+  .company-route-actions .table-button {
+    width: 100%;
+  }
+
+  .company-card-heading {
+    align-items: flex-start;
+  }
+
+  .live-route-map {
+    min-height: 280px;
+  }
+
+  .delivery-chat-embedded {
+    height: min(650px, calc(100dvh - 122px));
+  }
+
+  .delivery-chat-messages,
+  .support-messages {
+    padding: 16px 14px;
+  }
+
+  .delivery-chat-form,
+  .support-reply-form {
+    padding: 12px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  button,
+  .button,
+  .table-button {
+    touch-action: manipulation;
+  }
+
+  .support-workspace,
+  .delivery-chat-workspace {
+    gap: 8px;
+    grid-template-rows: minmax(170px, 29%) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar .brand-word {
+    display: none;
+  }
+
+  .app-top-actions .notification-button:not(.app-install-button) {
+    display: none;
+  }
+
+  .app-topbar h1 {
+    max-width: 34vw;
+  }
+
+  .app-primary-action {
+    max-width: 96px;
+  }
+
+  .app-mobile-nav {
+    right: 6px;
+    left: 6px;
+  }
+
+  .app-mobile-nav button span {
+    font-size: 0.48rem;
+  }
+}
+
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior: none;
+    user-select: none;
+  }
+
+  input,
+  select,
+  textarea {
+    user-select: text;
+  }
+
+  .topbar,
+  .app-topbar {
+    padding-top: max(14px, env(safe-area-inset-top));
   }
 }
 

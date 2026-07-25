@@ -2,9 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="ViaFluxo: marketplace logístico para conectar empresas a uma rede confiável de transportadores.">
+  <meta name="theme-color" content="#06192e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ViaFluxo">
   <title>ViaFluxo | Marketplace logístico</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/brand-symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/brand-symbol.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -24,7 +32,10 @@
         <a href="#painel">Painel</a>
         <a href="#controles">Confianca</a>
       </nav>
-      <button class="button button-outline js-open-auth" type="button" data-auth-view="login">Entrar</button>
+      <div class="topbar-actions">
+        <button class="button button-outline install-app-button" type="button" hidden>Instalar</button>
+        <button class="button button-outline js-open-auth" type="button" data-auth-view="login">Entrar</button>
+      </div>
     </header>
 
     <main>
@@ -341,6 +352,7 @@
         <button class="sidebar-logout" id="logout-button" type="button">Sair da conta</button>
       </div>
     </aside>
+    <button class="app-menu-backdrop" id="app-menu-backdrop" type="button" aria-label="Fechar menu" tabindex="-1"></button>
 
     <main class="app-main">
       <header class="app-topbar">
@@ -350,6 +362,7 @@
           <h1 id="app-page-title">Painel</h1>
         </div>
         <div class="app-top-actions">
+          <button class="notification-button install-app-button app-install-button" type="button" aria-label="Instalar ViaFluxo" hidden>+</button>
           <button class="notification-button" type="button" aria-label="Notificacoes"><span></span>3</button>
           <button class="button button-primary button-small app-primary-action" id="app-primary-action" type="button">Nova rota</button>
         </div>
@@ -357,6 +370,7 @@
 
       <div class="app-content" id="app-content"></div>
     </main>
+    <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Navegacao principal do aplicativo"></nav>
   </section>
 
   <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">

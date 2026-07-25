@@ -1,0 +1,36 @@
+{
+  "id": "/",
+  "name": "ViaFluxo",
+  "short_name": "ViaFluxo",
+  "description": "Rotas, propostas e entregas conectando empresas e transportadores.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#f6f8fa",
+  "theme_color": "#06192e",
+  "orientation": "any",
+  "categories": ["business", "navigation", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/brand-symbol.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/brand-symbol.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Abrir ViaFluxo",
+      "short_name": "Inicio",
+      "url": "/"
+    }
+  ]
+}
