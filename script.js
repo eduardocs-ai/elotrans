@@ -109,6 +109,9 @@ const supportForm = document.querySelector("#support-form");
 const demoGuideDialog = document.querySelector("#demo-guide-dialog");
 const demoGuideContent = document.querySelector("#demo-guide-content");
 const demoProfileSwitch = document.querySelector("#demo-profile-switch");
+const demoModeLabel = document.querySelector("#demo-mode-label");
+const openDemoGuideButton = document.querySelector("#open-demo-guide");
+const resetDemoDataButton = document.querySelector("#reset-demo-data");
 const routeDialog = document.querySelector("#route-dialog");
 const routeForm = document.querySelector("#route-form");
 const proposalDialog = document.querySelector("#proposal-dialog");
@@ -128,6 +131,7 @@ const routeSubmit = document.querySelector("#route-submit");
 const routeReview = document.querySelector("#route-review");
 
 let currentUser = null;
+let demoSessionOwner = null;
 let activeSection = "overview";
 let activeUserDirectoryFilter = "company";
 let activeRegistrationFilter = "company";
@@ -989,10 +993,24 @@ function resolveDemoProfile(role) {
   return getUsers().find((user) => user.username === username) ?? null;
 }
 
+const DEMO_OWNER_USERNAME = "eduardo.calegari";
+
+function canUseDemoMode() {
+  return demoSessionOwner === DEMO_OWNER_USERNAME;
+}
+
+function updateDemoModeVisibility() {
+  const hidden = !canUseDemoMode();
+  if (demoModeLabel) demoModeLabel.hidden = hidden;
+  if (openDemoGuideButton) openDemoGuideButton.hidden = hidden;
+  if (resetDemoDataButton) resetDemoDataButton.hidden = hidden;
+}
+
 function switchDemoProfile(role, keepGuideOpen = false) {
+  if (!canUseDemoMode()) return;
   const user = resolveDemoProfile(role);
   if (!user) return;
-  showApp(user);
+  showApp(user, { preserveDemoSession: true });
   if (keepGuideOpen) {
     renderDemoGuide();
   } else {
@@ -1027,7 +1045,7 @@ function demoGuideSteps(role) {
 }
 
 function renderDemoGuide() {
-  if (!currentUser || !demoGuideContent || !demoProfileSwitch) return;
+  if (!currentUser || !canUseDemoMode() || !demoGuideContent || !demoProfileSwitch) return;
   const profiles = [
     ["admin", "Administrador"],
     ["company", "Empresa"],
@@ -1063,12 +1081,13 @@ function renderDemoGuide() {
 }
 
 function openDemoGuide() {
-  if (!currentUser) return;
+  if (!currentUser || !canUseDemoMode()) return;
   renderDemoGuide();
   openDialog(demoGuideDialog);
 }
 
 function resetDemoData() {
+  if (!canUseDemoMode()) return;
   if (!window.confirm("Restaurar todos os dados simulados ao cenario inicial da apresentacao?")) return;
   const currentRole = currentUser?.role ?? "admin";
   stopCarrierGpsTracking();
@@ -1111,6 +1130,9 @@ function updateRegistrationFields() {
 function resolveSession() {
   const session = readStorage(STORAGE_KEYS.session, null);
   if (!session) return null;
+  demoSessionOwner = session.demoOwner === DEMO_OWNER_USERNAME || session.username === DEMO_OWNER_USERNAME
+    ? DEMO_OWNER_USERNAME
+    : null;
 
   if (session.role === "admin" && ADMIN_USERS[session.username]) {
     return {
@@ -1140,20 +1162,30 @@ function availableNavigation(user) {
   return NAVIGATION[user.role];
 }
 
-function showApp(user) {
+function showApp(user, { preserveDemoSession = false } = {}) {
+  if (user.username === DEMO_OWNER_USERNAME) {
+    demoSessionOwner = DEMO_OWNER_USERNAME;
+  } else if (!preserveDemoSession) {
+    demoSessionOwner = null;
+  }
   currentUser = user;
   activeSection = defaultSectionFor(user);
   pageShell.hidden = true;
   appShell.hidden = false;
   authDialog.close();
   document.body.classList.add("app-mode");
-  writeStorage(STORAGE_KEYS.session, { username: user.username, role: user.role });
+  writeStorage(STORAGE_KEYS.session, {
+    username: user.username,
+    role: user.role,
+    ...(canUseDemoMode() ? { demoOwner: DEMO_OWNER_USERNAME } : {}),
+  });
 
   accountName.textContent = user.fullName;
   accountRole.textContent = user.role === "admin"
     ? adminRoleLabel(user.username)
     : `${ROLE_LABELS[user.role]} · ${statusLabel(user.status)}`;
   accountAvatar.textContent = initials(user.fullName);
+  updateDemoModeVisibility();
   renderNavigation();
   renderCurrentSection();
 }
@@ -1161,6 +1193,7 @@ function showApp(user) {
 function logout() {
   stopCarrierGpsTracking();
   currentUser = null;
+  demoSessionOwner = null;
   localStorage.removeItem(STORAGE_KEYS.session);
   appShell.hidden = true;
   pageShell.hidden = false;
@@ -3836,11 +3869,12 @@ document.querySelectorAll("[data-demo-login]").forEach((button) => {
   button.addEventListener("click", () => switchDemoProfile(button.dataset.demoLogin));
 });
 
-document.querySelector("#open-demo-guide")?.addEventListener("click", openDemoGuide);
-document.querySelector("#reset-demo-data")?.addEventListener("click", resetDemoData);
+openDemoGuideButton?.addEventListener("click", openDemoGuide);
+resetDemoDataButton?.addEventListener("click", resetDemoData);
 document.querySelector("#demo-reset-dialog")?.addEventListener("click", resetDemoData);
 
 demoGuideDialog?.addEventListener("click", (event) => {
+  if (!canUseDemoMode()) return;
   const switchButton = event.target.closest("[data-demo-switch]");
   if (switchButton) {
     switchDemoProfile(switchButton.dataset.demoSwitch, true);

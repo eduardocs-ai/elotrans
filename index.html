@@ -348,7 +348,7 @@
       <nav class="app-nav" id="app-nav" aria-label="Navegacao do aplicativo"></nav>
 
       <div class="sidebar-foot">
-        <span>Modo demonstracao</span>
+        <span id="demo-mode-label">Modo demonstracao</span>
         <button class="sidebar-demo-action" id="open-demo-guide" type="button">Roteiro da apresentacao</button>
         <button class="sidebar-demo-action is-muted" id="reset-demo-data" type="button">Restaurar dados iniciais</button>
         <button class="sidebar-logout" id="logout-button" type="button">Sair da conta</button>
@@ -423,7 +423,7 @@
             <p class="form-feedback" id="login-feedback" role="alert"></p>
             <button class="button button-primary" type="submit">Entrar na ViaFluxo</button>
           </form>
-          <div class="demo-login">
+          <div class="demo-login" hidden>
             <div><span>Apresentacao rapida</span><small>Entre com um perfil demonstrativo</small></div>
             <div class="demo-login-grid">
               <button type="button" data-demo-login="admin"><strong>Administrador</strong><small>Controle da plataforma</small></button>
