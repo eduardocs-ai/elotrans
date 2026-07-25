@@ -106,6 +106,9 @@ const approvalEmailPreview = document.querySelector("#approval-email-preview");
 const copyEmailHtmlButton = document.querySelector("#copy-email-html");
 const supportDialog = document.querySelector("#support-dialog");
 const supportForm = document.querySelector("#support-form");
+const demoGuideDialog = document.querySelector("#demo-guide-dialog");
+const demoGuideContent = document.querySelector("#demo-guide-content");
+const demoProfileSwitch = document.querySelector("#demo-profile-switch");
 const routeDialog = document.querySelector("#route-dialog");
 const routeForm = document.querySelector("#route-form");
 const proposalDialog = document.querySelector("#proposal-dialog");
@@ -221,6 +224,7 @@ function seedTestUsers() {
 function seedRoutes() {
   const routes = readStorage(STORAGE_KEYS.routes, null);
   if (routes) {
+    let changed = false;
     const sharedDemoRoute = routes.find((route) => route.id === "route-demo-3");
     if (sharedDemoRoute && !sharedDemoRoute.selectedCarrierUsername) {
       sharedDemoRoute.selectedCarrier = "Marcos Fretes";
@@ -234,8 +238,21 @@ function seedRoutes() {
           createdAt: "2026-07-24T07:20:00.000Z",
         },
       ];
-      writeStorage(STORAGE_KEYS.routes, routes);
+      changed = true;
     }
+    const demoOpportunity = routes.find((route) => route.id === "route-demo-1");
+    if (demoOpportunity && !demoOpportunity.proposals.some((proposal) => proposal.username === "motorista.demo")) {
+      demoOpportunity.proposals.unshift({
+        username: "motorista.demo",
+        carrier: "Marcos Fretes",
+        amount: 229,
+        deliveryTime: "16 horas",
+        message: "Veiculo disponivel e experiencia com pecas automotivas.",
+        score: 98.2,
+      });
+      changed = true;
+    }
+    if (changed) writeStorage(STORAGE_KEYS.routes, routes);
     return routes;
   }
 
@@ -255,6 +272,14 @@ function seedRoutes() {
       progress: 12,
       lastUpdate: "Publicada ha 2 horas",
       proposals: [
+        {
+          username: "motorista.demo",
+          carrier: "Marcos Fretes",
+          amount: 229,
+          deliveryTime: "16 horas",
+          message: "Veiculo disponivel e experiencia com pecas automotivas.",
+          score: 98.2,
+        },
         { carrier: "Foco Entregas", amount: 238, deliveryTime: "18 horas", score: 99.1 },
         { carrier: "JL Fretes", amount: 221, deliveryTime: "24 horas", score: 96.9 },
         { carrier: "Expresso Norte Sul", amount: 252, deliveryTime: "14 horas", score: 97.8 },
@@ -408,7 +433,14 @@ function saveVehicles(vehicles) {
 
 function seedOccurrences() {
   const occurrences = readStorage(STORAGE_KEYS.occurrences, null);
-  if (occurrences) return occurrences;
+  if (occurrences) {
+    const delayedDemoOccurrence = occurrences.find((occurrence) => occurrence.id === "occ-demo-1");
+    if (delayedDemoOccurrence?.carrier === "JL Fretes") {
+      delayedDemoOccurrence.carrier = "Marcos Fretes";
+      writeStorage(STORAGE_KEYS.occurrences, occurrences);
+    }
+    return occurrences;
+  }
 
   const initialOccurrences = [
     {
@@ -419,7 +451,7 @@ function seedOccurrences() {
       status: "open",
       title: "Entrega fora do prazo e sem atualizacao",
       company: "Alvorada Autopecas",
-      carrier: "JL Fretes",
+      carrier: "Marcos Fretes",
       openedAt: "2026-07-25T12:18:00.000Z",
       dueAt: "2026-07-25T16:00:00.000Z",
       owner: "",
@@ -944,6 +976,125 @@ function showAuth(view = "login", requestedRole) {
   openDialog(authDialog);
 }
 
+function resolveDemoProfile(role) {
+  if (role === "admin") {
+    return {
+      username: "eduardo.calegari",
+      fullName: ADMIN_USERS["eduardo.calegari"],
+      role: "admin",
+      status: "approved",
+    };
+  }
+  const username = role === "company" ? "empresa.demo" : "motorista.demo";
+  return getUsers().find((user) => user.username === username) ?? null;
+}
+
+function switchDemoProfile(role, keepGuideOpen = false) {
+  const user = resolveDemoProfile(role);
+  if (!user) return;
+  showApp(user);
+  if (keepGuideOpen) {
+    renderDemoGuide();
+  } else {
+    demoGuideDialog?.close();
+    showToast(`Perfil demonstrativo alterado para ${ROLE_LABELS[user.role]}.`);
+  }
+}
+
+function demoGuideSteps(role) {
+  if (role === "admin") {
+    return [
+      ["Visao geral da plataforma", "Apresente indicadores, prioridades e operacoes que exigem atencao.", "overview", ""],
+      ["Validacao de parceiros", "Mostre a separacao entre empresas e transportadores e a analise documental.", "registrations", ""],
+      ["Torre operacional", "Abra uma entrega para acompanhar prazo, transportador, GPS e ocorrencias.", "operations", "route-demo-3"],
+      ["Ocorrencias e suporte", "Demonstre atribuicao, resolucao e atendimento aos usuarios.", "occurrences", ""],
+    ];
+  }
+  if (role === "company") {
+    return [
+      ["Compare propostas", "Abra a rota Vitoria → Campos e compare preco, prazo e reputacao.", "proposals", "route-demo-1"],
+      ["Contrate um parceiro", "Selecione Marcos Fretes para conectar os dois perfis no mesmo fluxo.", "proposals", "route-demo-1"],
+      ["Acompanhe a entrega", "Mostre GPS, linha do tempo, documentos, chat e registro de ocorrencias.", "deliveries", "route-demo-3"],
+      ["Historico e suporte", "Consulte conversas arquivadas e abra um chamado para a ViaFluxo.", "delivery-chat", "route-demo-3"],
+    ];
+  }
+  return [
+    ["Encontre oportunidades", "Mostre filtros, detalhes da carga e envio ou edicao de propostas.", "opportunities", "route-demo-1"],
+    ["Execute uma entrega", "Abra a rota Serra → Teixeira de Freitas e apresente GPS e etapas.", "deliveries", "route-demo-3"],
+    ["Converse com a empresa", "Use o chat dentro da entrega para alinhar coleta, previsao e recebimento.", "deliveries", "route-demo-3"],
+    ["Comprove e construa reputacao", "Apresente comprovante, veiculos, documentos e avaliacoes.", "reviews", ""],
+  ];
+}
+
+function renderDemoGuide() {
+  if (!currentUser || !demoGuideContent || !demoProfileSwitch) return;
+  const profiles = [
+    ["admin", "Administrador"],
+    ["company", "Empresa"],
+    ["carrier", "Transportador"],
+  ];
+  demoProfileSwitch.innerHTML = profiles.map(([role, label]) => `
+    <button type="button" class="${currentUser.role === role ? "is-active" : ""}" data-demo-switch="${role}">
+      <span>${label.slice(0, 1)}</span>${label}
+    </button>
+  `).join("");
+
+  const steps = demoGuideSteps(currentUser.role);
+  demoGuideContent.innerHTML = `
+    <div class="demo-guide-summary">
+      <div><span>Perfil atual</span><strong>${escapeHtml(ROLE_LABELS[currentUser.role])}</strong></div>
+      <div><span>Acesso</span><strong>${escapeHtml(currentUser.username)}</strong></div>
+      <div><span>Cenario</span><strong>Dados simulados</strong></div>
+    </div>
+    <div class="demo-guide-steps">
+      ${steps.map(([title, copy, section, routeId], index) => `
+        <button type="button" data-demo-section="${section}" data-demo-route="${routeId}">
+          <b>${String(index + 1).padStart(2, "0")}</b>
+          <span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(copy)}</small></span>
+          <i>Ir</i>
+        </button>
+      `).join("")}
+    </div>
+    <aside class="demo-pitch-note">
+      <span>Ponto principal</span>
+      <p>A ViaFluxo concentra contratacao, acompanhamento e confianca em uma unica jornada para os dois lados da entrega.</p>
+    </aside>
+  `;
+}
+
+function openDemoGuide() {
+  if (!currentUser) return;
+  renderDemoGuide();
+  openDialog(demoGuideDialog);
+}
+
+function resetDemoData() {
+  if (!window.confirm("Restaurar todos os dados simulados ao cenario inicial da apresentacao?")) return;
+  const currentRole = currentUser?.role ?? "admin";
+  stopCarrierGpsTracking();
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+  if ("indexedDB" in window) indexedDB.deleteDatabase(DOCUMENT_DATABASE.name);
+  selectedRouteId = null;
+  selectedOperationId = null;
+  selectedOccurrenceId = null;
+  selectedCompanyRouteId = null;
+  selectedCarrierRouteId = null;
+  selectedDeliveryChatRouteId = null;
+  selectedSupportTicketId = null;
+  activeOperationFilter = "all";
+  activeOccurrenceFilter = "open";
+  activeCompanyRouteFilter = "all";
+  activeCarrierOpportunityFilter = "all";
+  seedTestUsers();
+  seedRoutes();
+  seedVehicles();
+  seedTickets();
+  seedOccurrences();
+  seedAudits();
+  switchDemoProfile(currentRole);
+  showToast("Demonstracao restaurada ao cenario inicial.");
+}
+
 function updateRegistrationFields() {
   const selectedRole = registerForm.elements.role.value;
   document.querySelectorAll(".company-field").forEach((field) => {
@@ -1093,6 +1244,21 @@ function navigateToAppSection(section) {
   selectedCarrierRouteId = null;
   setAppMenuOpen(false);
   renderCurrentSection();
+}
+
+function navigateDemoStep(section, routeId) {
+  demoGuideDialog?.close();
+  if (section === "operations") selectedOperationId = routeId || null;
+  if (section === "deliveries") {
+    if (currentUser.role === "company") selectedCompanyRouteId = routeId || null;
+    if (currentUser.role === "carrier") selectedCarrierRouteId = routeId || null;
+  }
+  if (section === "opportunities") selectedCarrierRouteId = routeId || null;
+  if (section === "delivery-chat") selectedDeliveryChatRouteId = routeId || null;
+  activeSection = section;
+  setAppMenuOpen(false);
+  renderCurrentSection();
+  if (section === "proposals" && routeId) openProposalComparison(routeId);
 }
 
 function renderCurrentSection() {
@@ -3299,8 +3465,8 @@ function renderSettings() {
         <p class="mini-label">Conta e preferencias</p>
         <h3>Dados do perfil</h3>
         <div class="app-list">
-          <div class="app-list-row"><strong>Nome</strong><span>${escapeHtml(currentUser.fullName)}</span><button class="table-button" type="button">Editar</button></div>
-          <div class="app-list-row"><strong>Usuario</strong><span>${escapeHtml(currentUser.username)}</span><button class="table-button" type="button">Alterar senha</button></div>
+          <div class="app-list-row"><strong>Nome</strong><span>${escapeHtml(currentUser.fullName)}</span><button class="table-button" type="button" data-action="demo-coming-soon">Edicao em breve</button></div>
+          <div class="app-list-row"><strong>Usuario</strong><span>${escapeHtml(currentUser.username)}</span><button class="table-button" type="button" data-action="demo-coming-soon">Senha em breve</button></div>
           <div class="app-list-row"><strong>Perfil</strong><span>${escapeHtml(ROLE_LABELS[currentUser.role])}</span><span class="status ${statusClass(currentUser.status)}">${escapeHtml(statusLabel(currentUser.status))}</span></div>
         </div>
       </article>
@@ -3666,6 +3832,24 @@ document.querySelector("#forgot-password").addEventListener("click", () => {
   loginFeedback.textContent = "A recuperacao por e-mail sera habilitada quando o backend for conectado.";
 });
 
+document.querySelectorAll("[data-demo-login]").forEach((button) => {
+  button.addEventListener("click", () => switchDemoProfile(button.dataset.demoLogin));
+});
+
+document.querySelector("#open-demo-guide")?.addEventListener("click", openDemoGuide);
+document.querySelector("#reset-demo-data")?.addEventListener("click", resetDemoData);
+document.querySelector("#demo-reset-dialog")?.addEventListener("click", resetDemoData);
+
+demoGuideDialog?.addEventListener("click", (event) => {
+  const switchButton = event.target.closest("[data-demo-switch]");
+  if (switchButton) {
+    switchDemoProfile(switchButton.dataset.demoSwitch, true);
+    return;
+  }
+  const stepButton = event.target.closest("[data-demo-section]");
+  if (stepButton) navigateDemoStep(stepButton.dataset.demoSection, stepButton.dataset.demoRoute);
+});
+
 appNav.addEventListener("click", (event) => {
   const button = event.target.closest("[data-section]");
   if (!button) return;
@@ -3696,6 +3880,7 @@ appContent.addEventListener("click", (event) => {
   if (!actionButton) return;
   const { action, username, routeId } = actionButton.dataset;
 
+  if (action === "demo-coming-soon") showToast("Funcao sinalizada para a etapa de integracao segura do backend.");
   if (action === "approve-user") approveOrRejectUser(username, "approved");
   if (action === "reject-user") approveOrRejectUser(username, "rejected");
   if (action === "review-user") openDocumentReview(username);

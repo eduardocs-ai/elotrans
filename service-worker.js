@@ -1,4 +1,4 @@
-const CACHE_NAME = "viafluxo-app-v1";
+const CACHE_NAME = "viafluxo-app-v2";
 const APP_SHELL = [
   "/",
   "/index.html",

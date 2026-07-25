@@ -348,7 +348,9 @@
       <nav class="app-nav" id="app-nav" aria-label="Navegacao do aplicativo"></nav>
 
       <div class="sidebar-foot">
-        <span>Ambiente de prototipo</span>
+        <span>Modo demonstracao</span>
+        <button class="sidebar-demo-action" id="open-demo-guide" type="button">Roteiro da apresentacao</button>
+        <button class="sidebar-demo-action is-muted" id="reset-demo-data" type="button">Restaurar dados iniciais</button>
         <button class="sidebar-logout" id="logout-button" type="button">Sair da conta</button>
       </div>
     </aside>
@@ -421,6 +423,14 @@
             <p class="form-feedback" id="login-feedback" role="alert"></p>
             <button class="button button-primary" type="submit">Entrar na ViaFluxo</button>
           </form>
+          <div class="demo-login">
+            <div><span>Apresentacao rapida</span><small>Entre com um perfil demonstrativo</small></div>
+            <div class="demo-login-grid">
+              <button type="button" data-demo-login="admin"><strong>Administrador</strong><small>Controle da plataforma</small></button>
+              <button type="button" data-demo-login="company"><strong>Empresa</strong><small>Publicacao e acompanhamento</small></button>
+              <button type="button" data-demo-login="carrier"><strong>Transportador</strong><small>Propostas e entregas</small></button>
+            </div>
+          </div>
         </section>
 
         <section class="auth-view" id="register-view">
@@ -495,6 +505,28 @@
             <button class="button button-primary" type="submit">Enviar cadastro para analise</button>
           </form>
         </section>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="product-dialog demo-guide-dialog" id="demo-guide-dialog" aria-labelledby="demo-guide-title">
+    <div class="dialog-card demo-guide-card">
+      <div class="dialog-head">
+        <div>
+          <p class="mini-label">Modo demonstracao</p>
+          <h2 id="demo-guide-title">Roteiro da apresentacao</h2>
+          <p>Apresente o ciclo completo da ViaFluxo com dados simulados e consistentes.</p>
+        </div>
+        <button class="icon-button js-close-dialog" type="button" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="demo-guide-profile-switch" id="demo-profile-switch" role="group" aria-label="Trocar perfil demonstrativo"></div>
+      <div class="demo-guide-content" id="demo-guide-content"></div>
+
+      <div class="demo-guide-footer">
+        <div><strong>Cenario seguro para testes</strong><span>Voce pode restaurar todos os dados a qualquer momento.</span></div>
+        <button class="button button-cancel" id="demo-reset-dialog" type="button">Restaurar demonstracao</button>
+        <button class="button button-primary js-close-dialog" type="button">Continuar no app</button>
       </div>
     </div>
   </dialog>
