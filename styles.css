@@ -3175,6 +3175,124 @@ textarea:focus {
   transform: rotate(1deg);
 }
 
+.audience-section {
+  padding-top: 90px;
+  background:
+    radial-gradient(circle at 88% 15%, rgba(8, 116, 223, 0.08), transparent 24%),
+    #fff;
+}
+
+.audience-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 42px;
+}
+
+.audience-card {
+  min-height: 330px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 38px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-soft);
+}
+
+.audience-card.is-company {
+  color: #fff;
+  border-color: transparent;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(8, 116, 223, 0.65), transparent 34%),
+    var(--color-brand-900);
+}
+
+.audience-card > span {
+  color: var(--color-brand-600);
+  font-size: var(--text-xs);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.audience-card.is-company > span {
+  color: var(--color-accent-500);
+}
+
+.audience-card h3 {
+  max-width: 18ch;
+  margin: 24px 0 14px;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: 1.02;
+}
+
+.audience-card p {
+  max-width: 54ch;
+  margin: 0 0 28px;
+  color: var(--color-ink-600);
+}
+
+.audience-card.is-company p {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.audience-card .route-link {
+  margin-top: auto;
+  color: inherit;
+}
+
+.site-footer {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  align-items: center;
+  gap: 34px;
+  padding: 38px max(28px, calc((100vw - 1240px) / 2));
+  color: rgba(255, 255, 255, 0.68);
+  background: #041a31;
+}
+
+.site-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-footer-brand > div {
+  display: grid;
+}
+
+.site-footer-brand strong {
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+
+.site-footer-brand small {
+  color: var(--color-accent-500);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.site-footer > p {
+  max-width: 55ch;
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.site-footer-links {
+  display: flex;
+  gap: 18px;
+}
+
+.site-footer-links button {
+  color: rgba(255, 255, 255, 0.74);
+  white-space: nowrap;
+}
+
 .window-head {
   display: flex;
   gap: 7px;
@@ -4527,6 +4645,177 @@ textarea:focus {
   height: 6px;
   border-radius: 50%;
   background: var(--color-urgent-500);
+}
+
+.notification-button b {
+  font: inherit;
+}
+
+.notification-dialog {
+  width: min(540px, calc(100% - 24px));
+  max-height: min(760px, calc(100dvh - 24px));
+  padding: 0;
+  border: 0;
+  border-radius: 26px;
+  background: transparent;
+  box-shadow: 0 30px 90px rgba(3, 24, 48, 0.28);
+}
+
+.notification-dialog::backdrop,
+.legal-dialog::backdrop {
+  background: rgba(3, 19, 38, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.notification-panel,
+.legal-card {
+  max-height: inherit;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 26px;
+  background: #fff;
+}
+
+.notification-panel > header,
+.legal-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.notification-panel h2,
+.legal-card h2 {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+
+.notification-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px -24px 0;
+  padding: 12px 24px;
+  border-block: 1px solid var(--color-line);
+  color: var(--color-ink-600);
+  font-size: var(--text-xs);
+}
+
+.notification-toolbar button,
+.site-footer-links button {
+  padding: 0;
+  border: 0;
+  color: var(--color-brand-700);
+  background: transparent;
+  font-size: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.notification-list {
+  min-height: 150px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding-top: 14px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  color: var(--color-ink-900);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  border-color: rgba(8, 116, 223, 0.32);
+  background: var(--color-surface-soft);
+}
+
+.notification-item > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-brand-600);
+}
+
+.notification-item.is-red > i {
+  background: var(--color-urgent-500);
+}
+
+.notification-item.is-amber > i {
+  background: var(--color-accent-500);
+}
+
+.notification-item.is-navy > i {
+  background: var(--color-brand-900);
+}
+
+.notification-item.is-read {
+  opacity: 0.58;
+}
+
+.notification-item span {
+  display: grid;
+  gap: 3px;
+}
+
+.notification-item strong {
+  font-size: var(--text-sm);
+}
+
+.notification-item small {
+  color: var(--color-ink-600);
+  line-height: 1.4;
+}
+
+.notification-item b {
+  color: var(--color-brand-700);
+  font-size: var(--text-xs);
+}
+
+.legal-dialog {
+  width: min(650px, calc(100% - 24px));
+  padding: 0;
+  border: 0;
+  border-radius: 26px;
+  background: transparent;
+}
+
+.legal-card {
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.legal-card > div {
+  color: var(--color-ink-600);
+}
+
+.legal-card h3 {
+  color: var(--color-ink-900);
+}
+
+.legal-card li + li {
+  margin-top: 8px;
+}
+
+.button-arrival {
+  margin-top: 14px;
+  color: #fff;
+  background: var(--color-brand-900);
 }
 
 .mobile-menu {
@@ -6247,6 +6536,15 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .audience-grid,
+  .site-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer {
+    align-items: flex-start;
+  }
+
   .auth-layout {
     grid-template-columns: 1fr;
   }
@@ -6365,6 +6663,7 @@ textarea:focus {
   .hero {
     margin: 0;
     padding-inline: 18px;
+    padding-bottom: 72px;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   }
 
@@ -6375,6 +6674,54 @@ textarea:focus {
   .hero-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .hero-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 28px;
+    padding-top: 16px;
+  }
+
+  .hero-metrics li {
+    min-width: 0;
+    padding: 0;
+  }
+
+  .hero-metrics strong {
+    font-size: 0.82rem;
+    line-height: 1.15;
+  }
+
+  .audience-section {
+    padding-top: 72px;
+  }
+
+  .audience-card {
+    min-height: 280px;
+    padding: 26px 22px;
+  }
+
+  .site-footer {
+    gap: 24px;
+    padding: 32px 20px 110px;
+  }
+
+  .site-footer-links {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notification-panel,
+  .legal-card {
+    padding: 20px 16px;
+    border-radius: 20px;
+  }
+
+  .notification-toolbar {
+    margin-inline: -16px;
+    padding-inline: 16px;
   }
 
   .auction-card {
@@ -7210,11 +7557,12 @@ textarea:focus {
 
 @media (max-width: 420px) {
   .topbar .brand-word {
-    display: none;
+    display: inline;
+    font-size: 1rem;
   }
 
   .app-top-actions .notification-button:not(.app-install-button) {
-    display: none;
+    display: grid;
   }
 
   .app-topbar h1 {

@@ -20,6 +20,7 @@ const STORAGE_KEYS = {
   occurrences: "viafluxo-occurrences-v1",
   audits: "viafluxo-audits-v1",
   vehicles: "viafluxo-vehicles-v1",
+  notifications: "viafluxo-notifications-v1",
 };
 
 const DOCUMENT_DATABASE = {
@@ -43,7 +44,6 @@ const NAVIGATION = {
     ["communications", "Comunicacoes"],
     ["audit", "Auditoria"],
     ["settings", "Configuracoes"],
-    ["finance", "Financeiro"],
   ],
   company: [
     ["overview", "Visao geral"],
@@ -51,8 +51,6 @@ const NAVIGATION = {
     ["proposals", "Propostas"],
     ["deliveries", "Entregas"],
     ["delivery-chat", "Conversas"],
-    ["finance", "Financeiro"],
-    ["team", "Equipe"],
     ["communications", "Suporte"],
     ["settings", "Configuracoes"],
   ],
@@ -67,7 +65,6 @@ const NAVIGATION = {
     ["delivery-chat", "Conversas"],
     ["communications", "Suporte"],
     ["settings", "Configuracoes"],
-    ["finance", "Financeiro"],
   ],
 };
 
@@ -112,6 +109,16 @@ const demoProfileSwitch = document.querySelector("#demo-profile-switch");
 const demoModeLabel = document.querySelector("#demo-mode-label");
 const openDemoGuideButton = document.querySelector("#open-demo-guide");
 const resetDemoDataButton = document.querySelector("#reset-demo-data");
+const notificationButton = document.querySelector("#notification-button");
+const notificationCount = document.querySelector("#notification-count");
+const notificationDot = document.querySelector("#notification-dot");
+const notificationDialog = document.querySelector("#notification-dialog");
+const notificationList = document.querySelector("#notification-list");
+const notificationSummary = document.querySelector("#notification-summary");
+const markNotificationsReadButton = document.querySelector("#mark-notifications-read");
+const legalDialog = document.querySelector("#legal-dialog");
+const legalTitle = document.querySelector("#legal-title");
+const legalContent = document.querySelector("#legal-content");
 const routeDialog = document.querySelector("#route-dialog");
 const routeForm = document.querySelector("#route-form");
 const proposalDialog = document.querySelector("#proposal-dialog");
@@ -738,6 +745,7 @@ function statusLabel(status) {
     assigned: "Transportador selecionado",
     "in-transit": "Em transito",
     delayed: "Atrasada",
+    arrived: "Chegou ao destino",
     delivered: "Entregue",
     "awaiting-provider": "Aguardando envio",
   }[status] ?? status;
@@ -754,9 +762,133 @@ function ticketStatusLabel(status) {
 
 function statusClass(status) {
   if (["approved", "delivered"].includes(status)) return "status-live";
-  if (["pending", "assigned", "in-transit"].includes(status)) return "status-review";
+  if (["pending", "assigned", "in-transit", "arrived"].includes(status)) return "status-review";
   if (["delayed", "rejected"].includes(status)) return "status-danger";
   return "";
+}
+
+function notificationReadIds() {
+  const store = readStorage(STORAGE_KEYS.notifications, {});
+  return new Set(store[currentUser?.username] || []);
+}
+
+function saveNotificationReadIds(ids) {
+  if (!currentUser) return;
+  const store = readStorage(STORAGE_KEYS.notifications, {});
+  store[currentUser.username] = [...ids].slice(-120);
+  writeStorage(STORAGE_KEYS.notifications, store);
+}
+
+function buildNotifications() {
+  if (!currentUser) return [];
+  const routes = getRoutes();
+  const users = getUsers();
+  const occurrences = getOccurrences();
+  const tickets = getTickets();
+  const items = [];
+  const add = (id, tone, title, copy, section, routeId = "") =>
+    items.push({ id, tone, title, copy, section, routeId });
+
+  if (currentUser.role === "admin") {
+    const pending = users.filter((user) => user.status === "pending");
+    const openOccurrences = occurrences.filter((item) => item.status !== "resolved");
+    const waitingTickets = tickets.filter((ticket) => ticket.status === "waiting-admin");
+    const delayed = routes.filter((route) => route.status === "delayed");
+    if (pending.length) add("admin-pending", "blue", `${pending.length} cadastro(s) aguardando analise`, "Confira documentos e libere apenas parceiros verificados.", "registrations");
+    if (openOccurrences.length) add("admin-occurrences", "red", `${openOccurrences.length} ocorrencia(s) aberta(s)`, "Existem operacoes que precisam de acompanhamento administrativo.", "occurrences");
+    if (waitingTickets.length) add("admin-support", "amber", `${waitingTickets.length} chamado(s) aguardando resposta`, "Usuarios aguardam retorno da equipe de suporte.", "communications");
+    if (delayed.length) add("admin-delayed", "red", `${delayed.length} entrega(s) atrasada(s)`, "Abra a torre operacional para revisar prazo, GPS e responsavel.", "operations", delayed[0].id);
+  }
+
+  if (currentUser.role === "company") {
+    const mine = routes.filter((route) => route.owner === currentUser.username);
+    mine.filter((route) => route.status === "open" && route.proposals.length).forEach((route) =>
+      add(`proposal-${route.id}-${route.proposals.length}`, "blue", `${route.proposals.length} proposta(s) recebida(s)`, `${route.origin} → ${route.destination} esta pronta para comparacao.`, "proposals", route.id)
+    );
+    mine.filter((route) => route.status === "delayed").forEach((route) =>
+      add(`delay-${route.id}`, "red", "Entrega com atraso registrado", `${route.origin} → ${route.destination} exige acompanhamento.`, "deliveries", route.id)
+    );
+    mine.filter((route) => ["assigned", "in-transit", "arrived"].includes(route.status) && route.tracking?.source !== "gps").forEach((route) =>
+      add(`gps-${route.id}`, "amber", "Entrega ainda sem GPS ao vivo", `O transportador de ${route.origin} → ${route.destination} precisa ativar a localizacao.`, "deliveries", route.id)
+    );
+  }
+
+  if (currentUser.role === "carrier") {
+    const mine = routes.filter((route) =>
+      route.selectedCarrierUsername === currentUser.username || route.selectedCarrier === currentUser.fullName
+    );
+    mine.filter((route) => route.status === "assigned").forEach((route) =>
+      add(`assigned-${route.id}`, "blue", "Nova entrega contratada", `Ative o GPS e confirme a coleta de ${route.origin} → ${route.destination}.`, "deliveries", route.id)
+    );
+    mine.filter((route) => route.status === "arrived").forEach((route) =>
+      add(`proof-${route.id}`, "amber", "Comprovante pendente", `Confirme o recebimento para concluir ${route.origin} → ${route.destination}.`, "deliveries", route.id)
+    );
+    const available = routes.filter((route) => route.status === "open").length;
+    if (available) add("carrier-opportunities", "blue", `${available} oportunidade(s) disponivel(is)`, "Confira as rotas abertas e envie uma proposta compativel.", "opportunities");
+  }
+
+  routes
+    .filter((route) => {
+      if (!route.conversation?.length) return false;
+      const owns = currentUser.role === "company"
+        ? route.owner === currentUser.username
+        : route.selectedCarrierUsername === currentUser.username || route.selectedCarrier === currentUser.fullName;
+      const last = route.conversation.at(-1);
+      return owns && last?.senderRole !== "system" && last?.senderUsername !== currentUser.username;
+    })
+    .slice(0, 2)
+    .forEach((route) => {
+      const last = route.conversation.at(-1);
+      add(`chat-${route.id}-${last.id}`, "navy", `Nova mensagem de ${last.senderName}`, `${route.origin} → ${route.destination}`, "deliveries", route.id);
+    });
+
+  return items.slice(0, 12);
+}
+
+function updateNotificationBadge() {
+  if (!currentUser || !notificationCount || !notificationDot) return;
+  const read = notificationReadIds();
+  const unread = buildNotifications().filter((item) => !read.has(item.id)).length;
+  notificationCount.textContent = String(unread);
+  notificationCount.hidden = unread === 0;
+  notificationDot.hidden = unread === 0;
+  notificationButton?.setAttribute("aria-label", unread ? `Abrir notificacoes: ${unread} nao lidas` : "Abrir notificacoes");
+}
+
+function renderNotifications() {
+  const notifications = buildNotifications();
+  const read = notificationReadIds();
+  const unread = notifications.filter((item) => !read.has(item.id)).length;
+  notificationSummary.textContent = unread ? `${unread} nao lida(s)` : "Tudo em dia";
+  markNotificationsReadButton.hidden = unread === 0;
+  notificationList.innerHTML = notifications.length
+    ? notifications.map((item) => `
+      <button class="notification-item is-${item.tone} ${read.has(item.id) ? "is-read" : ""}" type="button"
+        data-notification-id="${escapeHtml(item.id)}" data-notification-section="${escapeHtml(item.section)}" data-route-id="${escapeHtml(item.routeId)}">
+        <i></i><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.copy)}</small></span><b>Ver</b>
+      </button>
+    `).join("")
+    : emptyState("Nenhuma notificacao", "Novas propostas, mensagens e alertas operacionais aparecerao aqui.");
+}
+
+function openNotifications() {
+  renderNotifications();
+  openDialog(notificationDialog);
+}
+
+function openLegalView(view) {
+  const privacy = view === "privacy";
+  legalTitle.textContent = privacy ? "Privacidade e LGPD" : "Termos de uso";
+  legalContent.innerHTML = privacy ? `
+    <p>Os dados cadastrais, documentos, localizacao e registros operacionais devem ser usados somente para validar parceiros, executar entregas, prevenir fraudes e prestar suporte.</p>
+    <h3>Principios adotados</h3>
+    <ul><li>Coleta apenas do necessario para a operacao.</li><li>Acesso restrito conforme o perfil do usuario.</li><li>Historico de decisoes administrativas e ocorrencias.</li><li>Direito de correcao e exclusao conforme obrigacoes legais.</li></ul>
+  ` : `
+    <p>A plataforma aproxima empresas e transportadores verificados. Cada usuario responde pela veracidade dos dados enviados e pelo cumprimento das condicoes aceitas em cada rota.</p>
+    <h3>Regras essenciais</h3>
+    <ul><li>Propostas devem refletir capacidade, prazo e disponibilidade reais.</li><li>O GPS deve permanecer ativo durante entregas em andamento.</li><li>Ocorrencias e atrasos precisam ser informados imediatamente.</li><li>A entrega somente termina com comprovante legivel e recebedor identificado.</li></ul>
+  `;
+  openDialog(legalDialog);
 }
 
 function approvalEmailProfileContent(user) {
@@ -1303,6 +1435,7 @@ function renderCurrentSection() {
   appSectionLabel.textContent = ROLE_LABELS[currentUser.role];
 
   configurePrimaryAction();
+  updateNotificationBadge();
 
   if (activeSection === "verification") {
     renderVerification();
@@ -1387,7 +1520,7 @@ function renderAdminSection() {
   const pendingCarriers = pending.filter((user) => user.role === "carrier");
 
   if (activeSection === "overview") {
-    const activeOperations = routes.filter((route) => ["assigned", "in-transit", "delayed"].includes(route.status));
+    const activeOperations = routes.filter((route) => ["assigned", "in-transit", "delayed", "arrived"].includes(route.status));
     const openOccurrences = occurrences.filter((occurrence) => occurrence.status !== "resolved");
     const criticalOccurrences = openOccurrences.filter((occurrence) => occurrence.severity === "critical");
     appContent.innerHTML = `
@@ -1671,6 +1804,7 @@ function renderOperationDetail(route) {
     [route.selectedCarrier ? "Transportador selecionado" : "Aguardando propostas", route.selectedCarrier ?? `${route.proposals.length} propostas recebidas`, route.selectedCarrier ? "done" : "current"],
     ["Coleta confirmada", "Aguardando atualizacao", "next"],
     ["Carga em transito", "Aguardando coleta", "next"],
+    ["Chegada ao destino", "Pendente", "next"],
     ["Entrega e comprovante", "Pendente", "next"],
   ];
 
@@ -1957,7 +2091,7 @@ function renderUserRows(users, emptyTitle) {
 function renderCompanySection() {
   const routes = getRoutes().filter((route) => route.owner === currentUser.username);
   const proposals = routes.reduce((total, route) => total + route.proposals.length, 0);
-  const activeRoutes = routes.filter((route) => ["assigned", "in-transit", "delayed"].includes(route.status));
+  const activeRoutes = routes.filter((route) => ["assigned", "in-transit", "delayed", "arrived"].includes(route.status));
   const routeIds = new Set(routes.map((route) => route.id));
   const companyOccurrences = getOccurrences().filter((occurrence) => routeIds.has(occurrence.routeId));
 
@@ -2007,7 +2141,7 @@ function renderCompanySection() {
   if (activeSection === "routes") {
     const filteredRoutes = routes.filter((route) => {
       if (activeCompanyRouteFilter === "open") return route.status === "open";
-      if (activeCompanyRouteFilter === "active") return ["assigned", "in-transit", "delayed"].includes(route.status);
+      if (activeCompanyRouteFilter === "active") return ["assigned", "in-transit", "delayed", "arrived"].includes(route.status);
       if (activeCompanyRouteFilter === "delivered") return route.status === "delivered";
       return true;
     });
@@ -2096,7 +2230,7 @@ function renderCompanyRouteFilters(routes) {
   const filters = [
     ["all", "Todas", routes.length],
     ["open", "Recebendo propostas", routes.filter((route) => route.status === "open").length],
-    ["active", "Em andamento", routes.filter((route) => ["assigned", "in-transit", "delayed"].includes(route.status)).length],
+    ["active", "Em andamento", routes.filter((route) => ["assigned", "in-transit", "delayed", "arrived"].includes(route.status)).length],
     ["delivered", "Concluidas", routes.filter((route) => route.status === "delivered").length],
   ];
   return `<div class="operations-filter company-route-filters">${filters.map(([id, label, count]) => `
@@ -2188,11 +2322,11 @@ function renderCompanyLiveTracking(route) {
     && Number.isFinite(route.tracking.latitude)
     && Number.isFinite(route.tracking.longitude);
   const isLive = hasGpsCoordinates
-    && ["assigned", "in-transit", "delayed"].includes(route.status)
+    && ["assigned", "in-transit", "delayed", "arrived"].includes(route.status)
     && gpsAge < 120000;
   const trackingBadge = isLive
     ? "GPS ao vivo"
-    : ["assigned", "in-transit", "delayed"].includes(route.status)
+    : ["assigned", "in-transit", "delayed", "arrived"].includes(route.status)
       ? "GPS sem sinal recente"
       : statusLabel(route.status);
   const mapsUrl = hasGpsCoordinates
@@ -2241,6 +2375,7 @@ function renderCompanyDeliveryDetail(route, companyOccurrences) {
     [route.selectedCarrier ? "Transportador selecionado" : "Aguardando propostas", route.selectedCarrier || `${route.proposals.length} proposta(s)`, route.selectedCarrier ? "done" : "current"],
     ["Coleta confirmada", "Aguardando atualizacao", "next"],
     ["Carga em transito", "Aguardando coleta", "next"],
+    ["Chegada ao destino", "Pendente", "next"],
     ["Entrega e comprovante", "Pendente", "next"],
   ];
   const occurrences = companyOccurrences.filter((occurrence) => occurrence.routeId === route.id);
@@ -2593,7 +2728,8 @@ function renderCarrierDeliveryRows(routes) {
 function renderCarrierDeliveryDetail(route) {
   const timeline = route.timeline ?? [];
   const canConfirmPickup = route.status === "assigned";
-  const canDeliver = ["in-transit", "delayed"].includes(route.status);
+  const canConfirmArrival = ["in-transit", "delayed"].includes(route.status);
+  const canDeliver = route.status === "arrived";
   const gpsActive = isCarrierGpsActive();
   return `
     <button class="module-back" type="button" data-action="close-carrier-route">← Voltar para entregas</button>
@@ -2601,7 +2737,7 @@ function renderCarrierDeliveryDetail(route) {
       <div><span class="status ${statusClass(route.status)}">${escapeHtml(statusLabel(route.status))}</span><h2>${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</h2><p>${escapeHtml(route.companyName || route.owner)} · ${escapeHtml(route.lastUpdate || route.deadline)}</p></div>
       ${canConfirmPickup ? `<button class="button button-primary" type="button" data-action="${gpsActive ? "carrier-confirm-pickup" : "enable-carrier-gps"}" data-route-id="${route.id}">${gpsActive ? "Confirmar coleta" : "Ativar GPS para coletar"}</button>` : ""}
     </section>
-    ${["assigned", "in-transit", "delayed"].includes(route.status) ? renderCarrierGpsRequirement(1) : ""}
+    ${["assigned", "in-transit", "delayed", "arrived"].includes(route.status) ? renderCarrierGpsRequirement(1) : ""}
     <div class="operation-detail-grid carrier-delivery-detail">
       <article class="app-card operation-timeline-card">
         <p class="mini-label">Andamento</p><h3>Etapas da entrega</h3>
@@ -2617,7 +2753,7 @@ function renderCarrierDeliveryDetail(route) {
         </article>
       </aside>
       ${renderEmbeddedDeliveryChat(route)}
-      ${canDeliver && gpsActive ? `
+      ${canConfirmArrival && gpsActive ? `
         <article class="app-card span-12 carrier-checkin-card">
           <div><p class="mini-label">Rastreamento compartilhado</p><h3>Atualizar localizacao</h3><p>A empresa recebera este check-in imediatamente no acompanhamento da entrega.</p></div>
           <form class="carrier-tracking-form" data-route-id="${route.id}">
@@ -2626,7 +2762,10 @@ function renderCarrierDeliveryDetail(route) {
             <label>Nova previsao<input name="eta" type="text" placeholder="Ex.: Hoje, 18:30" value="${escapeHtml(route.tracking?.eta || "")}"></label>
             <button class="button button-primary button-small" type="submit">Enviar check-in</button>
           </form>
+          <button class="button button-arrival" type="button" data-action="carrier-confirm-arrival" data-route-id="${route.id}">Confirmar chegada ao destino</button>
         </article>
+      ` : ""}
+      ${canDeliver && gpsActive ? `
         <article class="app-card span-12 carrier-proof-card">
           <div><p class="mini-label">Finalizar entrega</p><h3>Envie o comprovante</h3><p>Informe quem recebeu e anexe uma foto ou PDF legivel.</p></div>
           <form class="carrier-proof-form" data-route-id="${route.id}">
@@ -2736,7 +2875,7 @@ function syncCarrierGpsPosition(position) {
   const routes = getRoutes();
   let changed = false;
   routes.forEach((route) => {
-    if (!carrierOwnsRoute(route) || !["assigned", "in-transit", "delayed"].includes(route.status)) return;
+    if (!carrierOwnsRoute(route) || !["assigned", "in-transit", "delayed", "arrived"].includes(route.status)) return;
     route.tracking = {
       ...route.tracking,
       source: "gps",
@@ -2853,11 +2992,50 @@ function confirmCarrierPickup(routeId) {
     ["Transportador selecionado", route.selectedCarrier, "done"],
     ["Coleta confirmada", formatDateTime(now), "done"],
     ["Carga em transito", "Em andamento", "current"],
+    ["Chegada ao destino", "Pendente", "next"],
     ["Entrega e comprovante", "Pendente", "next"],
   ];
   saveRoutes(routes);
   renderCurrentSection();
   showToast("Coleta confirmada. A empresa ja pode acompanhar o transito.");
+}
+
+function confirmCarrierArrival(routeId) {
+  const routes = getRoutes();
+  const route = routes.find((item) => item.id === routeId);
+  if (!carrierOwnsRoute(route) || !["in-transit", "delayed"].includes(route.status)) return;
+  if (!isCarrierGpsActive() || route.tracking?.source !== "gps") {
+    showToast("O GPS precisa estar ativo para confirmar a chegada.");
+    return;
+  }
+  const now = new Date().toISOString();
+  route.status = "arrived";
+  route.progress = 92;
+  route.lastUpdate = "Transportador chegou ao destino";
+  route.tracking = {
+    ...route.tracking,
+    note: "Veiculo no local de entrega",
+    eta: "Aguardando recebimento",
+  };
+  route.checkins = [
+    {
+      location: route.tracking.location,
+      note: "Chegada ao destino confirmada com GPS ativo",
+      updatedAt: now,
+    },
+    ...(route.checkins || []),
+  ].slice(0, 12);
+  route.timeline = [
+    ["Rota publicada", formatDate(route.pickup), "done"],
+    ["Transportador selecionado", route.selectedCarrier, "done"],
+    ["Coleta confirmada", "Concluida", "done"],
+    ["Carga em transito", "Concluida", "done"],
+    ["Chegada ao destino", formatDateTime(now), "done"],
+    ["Entrega e comprovante", "Aguardando recebimento", "current"],
+  ];
+  saveRoutes(routes);
+  renderCurrentSection();
+  showToast("Chegada confirmada. Agora envie o comprovante para concluir.");
 }
 
 function updateCarrierTracking(form) {
@@ -2893,7 +3071,7 @@ function updateCarrierTracking(form) {
 function completeCarrierDelivery(form) {
   const routes = getRoutes();
   const route = routes.find((item) => item.id === form.dataset.routeId);
-  if (!carrierOwnsRoute(route) || !["in-transit", "delayed"].includes(route.status)) return;
+  if (!carrierOwnsRoute(route) || route.status !== "arrived") return;
   if (!isCarrierGpsActive() || route.tracking?.source !== "gps") {
     showToast("Ative o GPS para confirmar o local da entrega.");
     return;
@@ -2928,13 +3106,14 @@ function completeCarrierDelivery(form) {
     ["Transportador selecionado", route.selectedCarrier, "done"],
     ["Coleta confirmada", "Concluida", "done"],
     ["Carga em transito", "Concluida", "done"],
+    ["Chegada ao destino", "Concluida", "done"],
     ["Entrega e comprovante", formatDateTime(deliveredAt), "done"],
   ];
   saveRoutes(routes);
   const hasAnotherActiveDelivery = routes.some((item) =>
     item.id !== route.id
     && carrierOwnsRoute(item)
-    && ["assigned", "in-transit", "delayed"].includes(item.status)
+    && ["assigned", "in-transit", "delayed", "arrived"].includes(item.status)
   );
   if (!hasAnotherActiveDelivery) stopCarrierGpsTracking();
   renderCurrentSection();
@@ -3498,18 +3677,17 @@ function renderSettings() {
         <p class="mini-label">Conta e preferencias</p>
         <h3>Dados do perfil</h3>
         <div class="app-list">
-          <div class="app-list-row"><strong>Nome</strong><span>${escapeHtml(currentUser.fullName)}</span><button class="table-button" type="button" data-action="demo-coming-soon">Edicao em breve</button></div>
-          <div class="app-list-row"><strong>Usuario</strong><span>${escapeHtml(currentUser.username)}</span><button class="table-button" type="button" data-action="demo-coming-soon">Senha em breve</button></div>
+          <div class="app-list-row"><strong>Nome</strong><span>${escapeHtml(currentUser.fullName)}</span><small>Dado verificado</small></div>
+          <div class="app-list-row"><strong>Usuario</strong><span>${escapeHtml(currentUser.username)}</span><small>Acesso principal</small></div>
           <div class="app-list-row"><strong>Perfil</strong><span>${escapeHtml(ROLE_LABELS[currentUser.role])}</span><span class="status ${statusClass(currentUser.status)}">${escapeHtml(statusLabel(currentUser.status))}</span></div>
         </div>
       </article>
       <article class="app-card">
         <p class="mini-label">Seguranca</p>
         <h3>Acesso da conta</h3>
-        <p>Ative verificacao em duas etapas e acompanhe dispositivos conectados quando o backend for integrado.</p>
+        <p>Use uma senha exclusiva, encerre a sessao em dispositivos compartilhados e mantenha seus dados de recuperacao atualizados.</p>
       </article>
     </div>
-    ${currentUser.role === "admin" ? '<p class="security-note">As credenciais administrativas fixas existem somente neste prototipo. Na versao real, as senhas devem ser protegidas no servidor, com hash, recuperacao segura e autenticacao em dois fatores.</p>' : ""}
   `;
 }
 
@@ -3865,6 +4043,37 @@ document.querySelector("#forgot-password").addEventListener("click", () => {
   loginFeedback.textContent = "A recuperacao por e-mail sera habilitada quando o backend for conectado.";
 });
 
+notificationButton?.addEventListener("click", openNotifications);
+
+markNotificationsReadButton?.addEventListener("click", () => {
+  saveNotificationReadIds(new Set(buildNotifications().map((item) => item.id)));
+  renderNotifications();
+  updateNotificationBadge();
+});
+
+notificationList?.addEventListener("click", (event) => {
+  const item = event.target.closest("[data-notification-id]");
+  if (!item) return;
+  const read = notificationReadIds();
+  read.add(item.dataset.notificationId);
+  saveNotificationReadIds(read);
+  notificationDialog.close();
+  const section = item.dataset.notificationSection;
+  const routeId = item.dataset.routeId;
+  if (routeId && section === "operations") selectedOperationId = routeId;
+  if (routeId && section === "deliveries") {
+    if (currentUser.role === "company") selectedCompanyRouteId = routeId;
+    if (currentUser.role === "carrier") selectedCarrierRouteId = routeId;
+  }
+  activeSection = section;
+  renderCurrentSection();
+  if (routeId && section === "proposals") openProposalComparison(routeId);
+});
+
+document.querySelectorAll("[data-legal-view]").forEach((button) => {
+  button.addEventListener("click", () => openLegalView(button.dataset.legalView));
+});
+
 document.querySelectorAll("[data-demo-login]").forEach((button) => {
   button.addEventListener("click", () => switchDemoProfile(button.dataset.demoLogin));
 });
@@ -3967,6 +4176,7 @@ appContent.addEventListener("click", (event) => {
     renderCurrentSection();
   }
   if (action === "carrier-confirm-pickup") confirmCarrierPickup(routeId);
+  if (action === "carrier-confirm-arrival") confirmCarrierArrival(routeId);
   if (action === "enable-carrier-gps") enableCarrierGpsTracking();
   if (action === "toggle-carrier-vehicle") toggleCarrierVehicle(actionButton.dataset.vehicleId);
   if (action === "filter-company-routes") {
@@ -4107,6 +4317,7 @@ routeForm.addEventListener("submit", (event) => {
       ["Transportador selecionado", "Aguardando propostas", "next"],
       ["Coleta confirmada", "Pendente", "next"],
       ["Carga em transito", "Pendente", "next"],
+      ["Chegada ao destino", "Pendente", "next"],
       ["Entrega e comprovante", "Pendente", "next"],
     ],
   });
@@ -4138,6 +4349,7 @@ proposalList.addEventListener("click", (event) => {
     ["Transportador selecionado", proposal.carrier, "done"],
     ["Coleta confirmada", "Aguardando atualizacao", "current"],
     ["Carga em transito", "Aguardando coleta", "next"],
+    ["Chegada ao destino", "Pendente", "next"],
     ["Entrega e comprovante", "Pendente", "next"],
   ];
   route.conversation = [

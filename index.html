@@ -153,6 +153,27 @@
         </div>
       </section>
 
+      <section class="section audience-section" aria-labelledby="audience-title">
+        <div class="section-heading">
+          <p class="eyebrow">Uma rede, dois lados</p>
+          <h2 id="audience-title">Valor claro para quem envia e para quem entrega.</h2>
+        </div>
+        <div class="audience-grid">
+          <article class="audience-card is-company">
+            <span>Para empresas</span>
+            <h3>Mais cobertura e controle operacional.</h3>
+            <p>Publique demandas, compare parceiros verificados e acompanhe GPS, ocorrencias e comprovantes em uma unica jornada.</p>
+            <button class="route-link js-open-auth" type="button" data-auth-view="register" data-role="company">Cadastrar empresa</button>
+          </article>
+          <article class="audience-card is-carrier">
+            <span>Para transportadores</span>
+            <h3>Mais oportunidades para uma frota ativa.</h3>
+            <p>Encontre rotas compativeis, envie propostas, converse com a empresa e construa reputacao a cada entrega concluida.</p>
+            <button class="route-link js-open-auth" type="button" data-auth-view="register" data-role="carrier">Quero transportar</button>
+          </article>
+        </div>
+      </section>
+
       <section class="section split-section" id="cadastro">
         <div class="section-heading">
           <p class="eyebrow">Cadastro de parceiros</p>
@@ -328,6 +349,19 @@
         </div>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <div class="site-footer-brand">
+        <span class="brand-symbol" aria-hidden="true"></span>
+        <div><strong>ViaFluxo</strong><small>Movendo entregas, conectando oportunidades.</small></div>
+      </div>
+      <p>Uma plataforma para aproximar empresas e transportadores com mais controle, confianca e visibilidade.</p>
+      <div class="site-footer-links">
+        <button type="button" data-legal-view="terms">Termos de uso</button>
+        <button type="button" data-legal-view="privacy">Privacidade e LGPD</button>
+        <button class="js-open-auth" type="button" data-auth-view="login">Acessar plataforma</button>
+      </div>
+    </footer>
   </div>
 
   <section class="app-shell" id="app-shell" hidden>
@@ -365,7 +399,9 @@
         </div>
         <div class="app-top-actions">
           <button class="notification-button install-app-button app-install-button" type="button" aria-label="Instalar ViaFluxo" hidden>+</button>
-          <button class="notification-button" type="button" aria-label="Notificacoes"><span></span>3</button>
+          <button class="notification-button" id="notification-button" type="button" aria-label="Abrir notificacoes">
+            <span id="notification-dot"></span><b id="notification-count">0</b>
+          </button>
           <button class="button button-primary button-small app-primary-action" id="app-primary-action" type="button">Nova rota</button>
         </div>
       </header>
@@ -374,6 +410,31 @@
     </main>
     <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Navegacao principal do aplicativo"></nav>
   </section>
+
+  <dialog class="notification-dialog" id="notification-dialog" aria-labelledby="notification-title">
+    <div class="notification-panel">
+      <header>
+        <div><p class="mini-label">Central de alertas</p><h2 id="notification-title">Notificacoes</h2></div>
+        <button class="dialog-close js-close-dialog" type="button" aria-label="Fechar">×</button>
+      </header>
+      <div class="notification-toolbar">
+        <span id="notification-summary">Tudo em dia</span>
+        <button id="mark-notifications-read" type="button">Marcar como lidas</button>
+      </div>
+      <div class="notification-list" id="notification-list"></div>
+    </div>
+  </dialog>
+
+  <dialog class="legal-dialog" id="legal-dialog" aria-labelledby="legal-title">
+    <article class="legal-card">
+      <header>
+        <div><p class="mini-label">Transparencia da plataforma</p><h2 id="legal-title">Termos de uso</h2></div>
+        <button class="dialog-close js-close-dialog" type="button" aria-label="Fechar">×</button>
+      </header>
+      <div id="legal-content"></div>
+      <button class="button button-primary js-close-dialog" type="button">Entendi</button>
+    </article>
+  </dialog>
 
   <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
     <div class="auth-layout">
