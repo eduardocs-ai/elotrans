@@ -232,6 +232,31 @@ function seedTestUsers() {
   saveUsers(users);
 }
 
+function createDemoOpenOpportunity() {
+  return {
+    id: "route-demo-6",
+    owner: "litoral.demo",
+    companyName: "Litoral Distribuidora",
+    origin: "Colatina, ES",
+    destination: "Vila Velha, ES",
+    cargo: "Pecas e acessorios",
+    vehicle: "Utilitario",
+    pickup: "2026-08-08",
+    deadline: "Entrega no mesmo dia",
+    weight: "420 kg",
+    volumes: 8,
+    dimensions: "Volumes fracionados",
+    budget: 340,
+    status: "open",
+    createdAt: "2026-07-27T13:20:00.000Z",
+    progress: 12,
+    lastUpdate: "Publicada recentemente",
+    proposals: [
+      { carrier: "Foco Entregas", amount: 328, deliveryTime: "8 horas", score: 99.1 },
+    ],
+  };
+}
+
 function seedRoutes() {
   const routes = readStorage(STORAGE_KEYS.routes, null);
   if (routes) {
@@ -263,11 +288,16 @@ function seedRoutes() {
       });
       changed = true;
     }
+    if (!routes.some((route) => route.id === "route-demo-6")) {
+      routes.push(createDemoOpenOpportunity());
+      changed = true;
+    }
     if (changed) writeStorage(STORAGE_KEYS.routes, routes);
     return routes;
   }
 
   const initialRoutes = [
+    createDemoOpenOpportunity(),
     {
       id: "route-demo-1",
       owner: "empresa.demo",
@@ -823,7 +853,10 @@ function buildNotifications() {
     mine.filter((route) => route.status === "arrived").forEach((route) =>
       add(`proof-${route.id}`, "amber", "Comprovante pendente", `Confirme o recebimento para concluir ${route.origin} → ${route.destination}.`, "deliveries", route.id)
     );
-    const available = routes.filter((route) => route.status === "open").length;
+    const available = routes.filter((route) =>
+      route.status === "open"
+      && !route.proposals.some((proposal) => proposal.username === currentUser.username)
+    ).length;
     if (available) add("carrier-opportunities", "blue", `${available} oportunidade(s) disponivel(is)`, "Confira as rotas abertas e envie uma proposta compativel.", "opportunities");
   }
 
@@ -1169,7 +1202,7 @@ function demoGuideSteps(role) {
     ];
   }
   return [
-    ["Encontre oportunidades", "Mostre filtros, detalhes da carga e envio ou edicao de propostas.", "opportunities", "route-demo-1"],
+    ["Encontre oportunidades", "Mostre filtros, detalhes da carga e envio de propostas.", "opportunities", "route-demo-6"],
     ["Execute uma entrega", "Abra a rota Serra → Teixeira de Freitas e apresente GPS e etapas.", "deliveries", "route-demo-3"],
     ["Converse com a empresa", "Use o chat dentro da entrega para alinhar coleta, previsao e recebimento.", "deliveries", "route-demo-3"],
     ["Comprove e construa reputacao", "Apresente comprovante, veiculos, documentos e avaliacoes.", "reviews", ""],
@@ -1487,11 +1520,9 @@ function configurePrimaryAction() {
   }
 
   if (currentUser.role === "company") {
-    appPrimaryAction.textContent = "Nova rota";
-    appPrimaryAction.dataset.action = "new-route";
+    appPrimaryAction.hidden = true;
   } else if (currentUser.role === "carrier") {
-    appPrimaryAction.textContent = "Ver oportunidades";
-    appPrimaryAction.dataset.action = "opportunities";
+    appPrimaryAction.hidden = true;
   } else {
     appPrimaryAction.hidden = !["overview", "registrations"].includes(activeSection);
     appPrimaryAction.textContent = "Analisar cadastros";
@@ -2098,40 +2129,20 @@ function renderCompanySection() {
   if (activeSection === "overview") {
     const routesWithOffers = routes.filter((route) => route.status === "open" && route.proposals.length);
     const deliveredRoutes = routes.filter((route) => route.status === "delivered");
+    const openRoutes = routes.filter((route) => route.status === "open");
     appContent.innerHTML = `
-      ${renderWelcome(
-        "Sua operacao, do pedido ao comprovante.",
-        "Publique demandas, compare parceiros verificados e acompanhe cada etapa sem perder o contexto.",
-        "Empresa verificada"
-      )}
+      <section class="module-intro company-module-intro overview-metrics-intro">
+        <div><p class="mini-label">Leitura executiva</p><h2>Indicadores da operacao</h2><p>Uma visao numerica do desempenho da empresa, sem repetir rotas, propostas ou entregas.</p></div>
+        <div class="module-summary"><span><strong>${routes.length}</strong> rotas no total</span><span><strong>${deliveredRoutes.length}</strong> concluidas</span></div>
+      </section>
       <div class="company-dashboard">
-        <div class="company-metrics">
+        <div class="company-metrics overview-metrics-only">
+          ${operationMetricCard(routes.length, "Rotas publicadas", "Historico total da empresa", "blue")}
+          ${operationMetricCard(openRoutes.length, "Leiloes abertos", "Ainda recebendo propostas", "amber")}
           ${operationMetricCard(activeRoutes.length, "Entregas em andamento", "Coleta, transito e atrasos", "blue")}
           ${operationMetricCard(routesWithOffers.length, "Rotas com propostas", `${proposals} ofertas recebidas`, "navy")}
           ${operationMetricCard(routes.filter((route) => route.status === "delayed").length, "Entregas atrasadas", "Precisam de acompanhamento", "red")}
           ${operationMetricCard(deliveredRoutes.length, "Entregas concluidas", "Comprovantes disponiveis", "green")}
-        </div>
-        <div class="company-overview-grid">
-          <article class="app-card company-priority-card">
-            <div class="company-card-heading">
-              <div><p class="mini-label">Prioridades</p><h3>O que precisa de voce</h3></div>
-              <span>${routesWithOffers.length + companyOccurrences.filter((item) => item.status !== "resolved").length}</span>
-            </div>
-            ${renderCompanyPriorities(routesWithOffers, companyOccurrences)}
-          </article>
-          <article class="app-card company-quick-card">
-            <p class="mini-label">Atalho operacional</p>
-            <h3>Nova demanda em poucos passos</h3>
-            <p>Cadastre rota, carga, prazo e requisitos. Somente transportadores compativeis poderao enviar propostas.</p>
-            <button class="button button-primary" type="button" data-action="new-route">Publicar nova rota</button>
-          </article>
-          <article class="app-card company-recent-card">
-            <div class="company-card-heading">
-              <div><p class="mini-label">Operacao recente</p><h3>Ultimas rotas</h3></div>
-              <button class="route-link" type="button" data-action="go-section" data-section-target="routes">Ver todas</button>
-            </div>
-            ${renderCompanyRouteCards(routes.slice(0, 4))}
-          </article>
         </div>
       </div>
     `;
@@ -2152,18 +2163,19 @@ function renderCompanySection() {
       </section>
       ${renderCompanyRouteFilters(routes)}
       <article class="app-card company-routes-card">
-        ${renderCompanyRouteCards(filteredRoutes)}
+        ${renderCompanyRouteCards(filteredRoutes, "routes")}
       </article>
     `;
     return;
   }
 
   if (activeSection === "proposals") {
-    const proposalRoutes = routes.filter((route) => route.proposals.length);
+    const proposalRoutes = routes.filter((route) => route.status === "open" && route.proposals.length);
+    const activeProposalCount = proposalRoutes.reduce((total, route) => total + route.proposals.length, 0);
     appContent.innerHTML = `
       <section class="module-intro company-module-intro">
         <div><p class="mini-label">Central de ofertas</p><h2>Propostas recebidas</h2><p>Compare preco, prazo e reputacao antes de contratar um parceiro.</p></div>
-        <div class="module-summary"><span><strong>${proposalRoutes.length}</strong> rotas com ofertas</span><span><strong>${proposals}</strong> propostas</span></div>
+        <div class="module-summary"><span><strong>${proposalRoutes.length}</strong> leiloes para decidir</span><span><strong>${activeProposalCount}</strong> propostas ativas</span></div>
       </section>
       <div class="company-proposal-groups">${renderCompanyProposalGroups(proposalRoutes)}</div>
     `;
@@ -2182,7 +2194,7 @@ function renderCompanySection() {
         <div><p class="mini-label">Torre de acompanhamento</p><h2>Entregas contratadas</h2><p>Acompanhe checkpoints, prazos, ocorrencias e comprovantes em um unico lugar.</p></div>
         <div class="module-summary"><span><strong>${activeRoutes.length}</strong> em andamento</span><span><strong>${deliveryRoutes.filter((route) => route.status === "delivered").length}</strong> concluidas</span></div>
       </section>
-      <article class="app-card company-routes-card">${renderCompanyRouteCards(deliveryRoutes, true)}</article>
+      <article class="app-card company-routes-card">${renderCompanyRouteCards(deliveryRoutes, "deliveries")}</article>
     `;
     return;
   }
@@ -2240,33 +2252,34 @@ function renderCompanyRouteFilters(routes) {
   `).join("")}</div>`;
 }
 
-function renderCompanyRouteCards(routes, deliveryMode = false) {
+function renderCompanyRouteCards(routes, mode = "routes") {
   if (!routes.length) {
     return emptyState("Nenhuma rota nesta etapa", "Publique uma nova demanda ou selecione outro filtro.");
   }
 
   return `<div class="company-route-list">${routes.map((route) => {
     const progress = Number(route.progress ?? (route.status === "open" ? 12 : 30));
-    const primaryAction = route.status === "open" && route.proposals.length
-      ? `<button class="table-button is-primary" type="button" data-action="compare-route" data-route-id="${route.id}">Comparar ${route.proposals.length}</button>`
-      : `<button class="table-button is-primary" type="button" data-action="view-company-route" data-route-id="${route.id}">${deliveryMode ? "Acompanhar" : "Ver detalhes"}</button>`;
+    const deliveryMode = mode === "deliveries";
+    const primaryAction = deliveryMode
+      ? `<button class="table-button is-primary" type="button" data-action="view-company-route" data-route-id="${route.id}">Acompanhar</button>`
+      : "";
     return `
-      <article class="company-route-row ${route.status === "delayed" ? "is-delayed" : ""}">
+      <article class="company-route-row ${deliveryMode ? "is-delivery" : "is-route-registry"} ${route.status === "delayed" ? "is-delayed" : ""}">
         <div class="company-route-main">
           <span>${escapeHtml(route.reference || `#${route.id.replace("route-", "").slice(0, 8).toUpperCase()}`)}</span>
           <strong>${escapeHtml(route.origin)} <i>→</i> ${escapeHtml(route.destination)}</strong>
           <small>${escapeHtml(route.cargo)} · ${escapeHtml(route.vehicle)} · coleta ${formatDate(route.pickup)}</small>
         </div>
         <div class="company-route-provider">
-          <small>${route.selectedCarrier ? "Transportador" : "Propostas"}</small>
-          <strong>${escapeHtml(route.selectedCarrier || `${route.proposals.length} recebida(s)`)}</strong>
-          <span>${escapeHtml(route.lastUpdate || route.deadline)}</span>
+          <small>${deliveryMode ? "Transportador" : "Prazo solicitado"}</small>
+          <strong>${escapeHtml(deliveryMode ? (route.selectedCarrier || "Aguardando definicao") : route.deadline)}</strong>
+          <span>${escapeHtml(deliveryMode ? (route.lastUpdate || "Sem atualizacao") : `Coleta ${formatDate(route.pickup)}`)}</span>
         </div>
         <div class="company-route-progress">
           <span class="status ${statusClass(route.status)}">${escapeHtml(statusLabel(route.status))}</span>
           <div><i style="width:${progress}%"></i></div>
         </div>
-        <div class="company-route-actions">${primaryAction}</div>
+        ${primaryAction ? `<div class="company-route-actions">${primaryAction}</div>` : ""}
       </article>
     `;
   }).join("")}</div>`;
@@ -2495,38 +2508,27 @@ function renderCarrierSection() {
     || route.selectedCarrier === currentUser.fullName
   );
   const myVehicles = getVehicles().filter((vehicle) => vehicle.owner === currentUser.username);
+  const availableRoutes = openRoutes.filter((route) =>
+    !route.proposals.some((proposal) => proposal.username === currentUser.username)
+  );
 
   if (activeSection === "overview") {
     const activeDeliveries = myDeliveries.filter((route) => route.status !== "delivered");
+    const completedDeliveries = myDeliveries.filter((route) => route.status === "delivered");
+    const activeOffers = myOffers.filter((offer) => offer.route.status === "open");
     appContent.innerHTML = `
-      ${renderWelcome(
-        `Boa rota, ${currentUser.fullName.split(" ")[0]}.`,
-        "Encontre novas oportunidades, acompanhe suas entregas e mantenha o perfil pronto para contratar.",
-        "Transportador verificado"
-      )}
-      ${activeDeliveries.length ? renderCarrierGpsRequirement(activeDeliveries.length) : ""}
+      <section class="module-intro carrier-module-intro overview-metrics-intro">
+        <div><p class="mini-label">Leitura executiva</p><h2>Indicadores da sua operacao</h2><p>Um resumo numerico do desempenho, sem repetir oportunidades, propostas ou entregas.</p></div>
+        <div class="module-summary"><span><strong>${myDeliveries.length}</strong> contratacoes</span><span><strong>${completedDeliveries.length}</strong> concluidas</span></div>
+      </section>
       <div class="carrier-dashboard">
-        <div class="carrier-metrics">
-          ${operationMetricCard(openRoutes.length, "Oportunidades abertas", "Rotas disponiveis agora", "blue")}
-          ${operationMetricCard(myOffers.length, "Propostas enviadas", "Aguardando decisao da empresa", "navy")}
+        <div class="carrier-metrics overview-metrics-only">
+          ${operationMetricCard(availableRoutes.length, "Oportunidades disponiveis", "Ainda sem proposta enviada", "blue")}
+          ${operationMetricCard(myOffers.length, "Propostas enviadas", "Historico comercial total", "navy")}
+          ${operationMetricCard(activeOffers.length, "Propostas em analise", "Aguardando decisao da empresa", "amber")}
           ${operationMetricCard(activeDeliveries.length, "Entregas em andamento", "Operacoes contratadas", "amber")}
+          ${operationMetricCard(completedDeliveries.length, "Entregas concluidas", "Comprovantes registrados", "green")}
           ${operationMetricCard(myDeliveries.length ? "98,2" : "—", "Seu score", "Prazo, cuidado e comunicacao", "green")}
-        </div>
-        <div class="carrier-overview-grid">
-          <article class="app-card carrier-next-card">
-            <div class="company-card-heading"><div><p class="mini-label">Proxima acao</p><h3>Sua operacao agora</h3></div><span>${activeDeliveries.length}</span></div>
-            ${activeDeliveries.length ? renderCarrierDeliveryRows(activeDeliveries.slice(0, 2)) : emptyState("Nenhuma entrega ativa", "Quando uma proposta for aceita, a operacao aparecera aqui.")}
-          </article>
-          <article class="app-card carrier-profile-card">
-            <p class="mini-label">Pronto para rodar</p>
-            <h3>${myVehicles.length ? `${myVehicles.length} veiculo(s) ativo(s)` : "Cadastre seu primeiro veiculo"}</h3>
-            <p>Documentos validos e disponibilidade atualizada aumentam a compatibilidade com novas rotas.</p>
-            <button class="button button-primary button-small" type="button" data-action="go-section" data-section-target="${myVehicles.length ? "opportunities" : "vehicles"}">${myVehicles.length ? "Ver oportunidades" : "Cadastrar veiculo"}</button>
-          </article>
-          <article class="app-card carrier-opportunity-preview">
-            <div class="company-card-heading"><div><p class="mini-label">Oportunidades recentes</p><h3>Rotas para avaliar</h3></div><button class="route-link" type="button" data-action="go-section" data-section-target="opportunities">Ver todas</button></div>
-            ${renderCarrierOpportunityCards(openRoutes.slice(0, 3), myOffers)}
-          </article>
         </div>
       </div>
     `;
@@ -2534,25 +2536,22 @@ function renderCarrierSection() {
   }
 
   if (activeSection === "opportunities") {
-    const selectedRoute = openRoutes.find((route) => route.id === selectedCarrierRouteId);
+    const selectedRoute = availableRoutes.find((route) => route.id === selectedCarrierRouteId);
     if (selectedRoute) {
-      appContent.innerHTML = renderCarrierOpportunityDetail(selectedRoute, myOffers);
+      appContent.innerHTML = renderCarrierOpportunityDetail(selectedRoute);
       return;
     }
-    const filteredRoutes = openRoutes.filter((route) => {
+    const filteredRoutes = availableRoutes.filter((route) => {
       if (activeCarrierOpportunityFilter === "all") return true;
-      if (activeCarrierOpportunityFilter === "mine") {
-        return myOffers.some((offer) => offer.route.id === route.id);
-      }
       return route.vehicle.toLowerCase() === activeCarrierOpportunityFilter;
     });
     appContent.innerHTML = `
       <section class="module-intro carrier-module-intro">
         <div><p class="mini-label">Leiloes abertos</p><h2>Oportunidades</h2><p>Analise carga, prazo e trajeto antes de definir o valor da sua proposta.</p></div>
-        <div class="module-summary"><span><strong>${openRoutes.length}</strong> disponiveis</span><span><strong>${myOffers.length}</strong> propostas enviadas</span></div>
+        <div class="module-summary"><span><strong>${availableRoutes.length}</strong> disponiveis</span><span><strong>${myVehicles.length}</strong> veiculo(s) cadastrado(s)</span></div>
       </section>
-      ${renderCarrierOpportunityFilters(openRoutes, myOffers)}
-      <article class="app-card carrier-opportunities-card">${renderCarrierOpportunityCards(filteredRoutes, myOffers)}</article>
+      ${renderCarrierOpportunityFilters(availableRoutes)}
+      <article class="app-card carrier-opportunities-card">${renderCarrierOpportunityCards(filteredRoutes)}</article>
     `;
     return;
   }
@@ -2604,13 +2603,12 @@ function renderCarrierSection() {
   }[activeSection]);
 }
 
-function renderCarrierOpportunityFilters(routes, offers) {
+function renderCarrierOpportunityFilters(routes) {
   const filters = [
     ["all", "Todas", routes.length],
     ["utilitario", "Utilitario", routes.filter((route) => route.vehicle.toLowerCase() === "utilitario").length],
     ["van", "Van", routes.filter((route) => route.vehicle.toLowerCase() === "van").length],
     ["pickup", "Pickup", routes.filter((route) => route.vehicle.toLowerCase() === "pickup").length],
-    ["mine", "Com proposta", offers.length],
   ];
   return `<div class="operations-filter carrier-opportunity-filters">${filters.map(([id, label, count]) => `
     <button class="${activeCarrierOpportunityFilter === id ? "is-active" : ""}" type="button" data-action="filter-carrier-opportunities" data-carrier-filter="${id}">
@@ -2619,13 +2617,12 @@ function renderCarrierOpportunityFilters(routes, offers) {
   `).join("")}</div>`;
 }
 
-function renderCarrierOpportunityCards(routes, offers) {
+function renderCarrierOpportunityCards(routes) {
   if (!routes.length) {
     return emptyState("Nenhuma oportunidade neste filtro", "Novas demandas compativeis aparecerao assim que forem publicadas.");
   }
 
   return `<div class="carrier-opportunity-list">${routes.map((route) => {
-    const myOffer = offers.find((offer) => offer.route.id === route.id);
     return `
       <article class="carrier-opportunity-row">
         <div class="carrier-opportunity-route">
@@ -2639,17 +2636,16 @@ function renderCarrierOpportunityCards(routes, offers) {
           <span>${route.budget ? `Referencia ${formatCurrency(route.budget)}` : "Valor aberto para proposta"}</span>
         </div>
         <div class="carrier-opportunity-state">
-          <span class="status ${myOffer ? "status-review" : ""}">${myOffer ? "Proposta enviada" : "Disponivel"}</span>
-          ${myOffer ? `<small>${formatCurrency(myOffer.amount)} · ${escapeHtml(myOffer.deliveryTime)}</small>` : `<small>${route.proposals.length} proposta(s) no leilao</small>`}
+          <span class="status">Disponivel</span>
+          <small>${route.proposals.length} proposta(s) no leilao</small>
         </div>
-        <button class="table-button is-primary" type="button" data-action="view-carrier-opportunity" data-route-id="${route.id}">${myOffer ? "Revisar" : "Analisar"}</button>
+        <button class="table-button is-primary" type="button" data-action="view-carrier-opportunity" data-route-id="${route.id}">Analisar</button>
       </article>
     `;
   }).join("")}</div>`;
 }
 
-function renderCarrierOpportunityDetail(route, offers) {
-  const myOffer = offers.find((offer) => offer.route.id === route.id);
+function renderCarrierOpportunityDetail(route) {
   return `
     <button class="module-back" type="button" data-action="close-carrier-route">← Voltar para oportunidades</button>
     <section class="carrier-opportunity-hero">
@@ -2658,7 +2654,7 @@ function renderCarrierOpportunityDetail(route, offers) {
         <h2>${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</h2>
         <p>${escapeHtml(route.companyName || route.owner)} · coleta ${formatDate(route.pickup)} · ${escapeHtml(route.deadline)}</p>
       </div>
-      <button class="button button-primary" type="button" data-action="offer-route" data-route-id="${route.id}">${myOffer ? "Editar proposta" : "Enviar proposta"}</button>
+      <button class="button button-primary" type="button" data-action="offer-route" data-route-id="${route.id}">Enviar proposta</button>
     </section>
     <div class="carrier-opportunity-detail-grid">
       <article class="app-card carrier-cargo-card">
@@ -2685,7 +2681,6 @@ function renderCarrierOpportunityDetail(route, offers) {
         <p class="mini-label">Orientacoes da empresa</p>
         <h3>Observacoes operacionais</h3>
         <p>${escapeHtml(route.notes || "A empresa nao adicionou observacoes para esta rota.")}</p>
-        ${myOffer ? `<div class="carrier-current-offer"><span>Sua proposta atual</span><strong>${formatCurrency(myOffer.amount)}</strong><small>${escapeHtml(myOffer.deliveryTime)}</small></div>` : ""}
       </article>
     </div>
   `;
