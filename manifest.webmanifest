@@ -14,13 +14,13 @@
   "categories": ["business", "navigation", "productivity"],
   "icons": [
     {
-      "src": "/assets/brand-symbol.png",
+      "src": "/assets/brand-symbol-1024.png",
       "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/brand-symbol.png",
+      "src": "/assets/brand-symbol-1024.png",
       "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "maskable"

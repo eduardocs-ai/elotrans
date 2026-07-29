@@ -10,10 +10,11 @@ const sourceFiles = [
   "script.js",
   "manifest.webmanifest",
   "service-worker.js",
+  "Design system/index.html",
+  "Design system/design-system.css",
   "Design system/tokens.css",
-  "assets/brand-logo-source.png",
-  "assets/brand-symbol-chroma.png",
-  "assets/brand-symbol.png",
+  "assets/brand-symbol.svg",
+  "assets/brand-symbol-1024.png",
 ];
 
 const contentTypes = {
@@ -22,6 +23,7 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".webmanifest": "application/manifest+json; charset=utf-8",
   ".png": "image/png",
+  ".svg": "image/svg+xml",
 };
 
 const assets = {};

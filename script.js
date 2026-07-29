@@ -968,7 +968,7 @@ function approvalEmailProfileContent(user) {
 function buildApprovalEmail(user) {
   const content = approvalEmailProfileContent(user);
   const firstName = user.fullName.split(" ")[0];
-  const logoUrl = new URL("assets/brand-symbol.png", window.location.href).href;
+  const logoUrl = new URL("assets/brand-symbol-1024.png", window.location.href).href;
   const loginUrl = window.location.href.split("#")[0];
 
   return `<!doctype html>
@@ -982,7 +982,7 @@ function buildApprovalEmail(user) {
           <tr><td style="height:8px;background:#ffc928;font-size:0;">&nbsp;</td></tr>
           <tr><td style="padding:26px 34px;background:#062b55;">
             <img src="${escapeHtml(logoUrl)}" width="46" height="46" alt="" style="display:inline-block;width:46px;height:46px;vertical-align:middle;border:0;">
-            <span style="display:inline-block;margin-left:9px;color:#fff;font-size:23px;font-weight:700;vertical-align:middle;">TransFluxo</span>
+            <span style="display:inline-block;margin-left:9px;color:#fff;font-size:23px;font-weight:700;vertical-align:middle;">Trans<span style="color:#3da1ff;">Fluxo</span></span>
           </td></tr>
           <tr><td style="padding:38px 34px 18px;">
             <span style="display:inline-block;padding:7px 12px;border-radius:999px;background:#e4f7ee;color:#148558;font-size:12px;font-weight:700;">Verificacao concluida</span>

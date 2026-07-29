@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Simbolo TransFluxo</title>
+  <desc id="desc">Monograma geometrico TF formado por caminhos conectados.</desc>
+  <defs>
+    <linearGradient id="flow" x1="64" y1="112" x2="322" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0757F6"/>
+      <stop offset=".48" stop-color="#0874DF"/>
+      <stop offset="1" stop-color="#08C9E8"/>
+    </linearGradient>
+    <linearGradient id="deep" x1="214" y1="112" x2="440" y2="394" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#082A74"/>
+      <stop offset="1" stop-color="#031A55"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#flow)" d="M44 96h140c23 0 43 8 59 24l78 78c16 16 24 36 24 59v151l-55 43V278c0-20-6-34-20-48l-99-90H78L44 96Z"/>
+  <path fill="url(#deep)" d="M468 96H352c-23 0-42 8-58 24l-60 60 39 39 87-79h74l34-44Z"/>
+  <path fill="url(#deep)" d="M354 224h80l-35 55h-45v-55Z"/>
+  <path fill="url(#deep)" d="m211 222 55 55v174l-55-43V222Z"/>
+</svg>

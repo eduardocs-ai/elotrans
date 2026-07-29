@@ -1,4 +1,4 @@
-const CACHE_NAME = "transfluxo-app-v1";
+const CACHE_NAME = "transfluxo-app-v2";
 const APP_SHELL = [
   "/",
   "/index.html",

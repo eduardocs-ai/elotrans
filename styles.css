@@ -2969,16 +2969,22 @@ button {
   display: block;
   flex: 0 0 auto;
   background-color: transparent;
-  background-image: url("assets/brand-symbol.png");
+  background-image: url("assets/brand-symbol.svg");
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 136%;
+  background-size: contain;
   filter: drop-shadow(0 4px 7px rgba(6, 43, 85, 0.1));
 }
 
 .brand-word {
   position: relative;
   top: 0;
+}
+
+.brand-word > span,
+.site-footer-brand strong > span,
+.pwa-install-brand strong > span {
+  color: #0874df;
 }
 
 .brand-slogan {
@@ -4077,8 +4083,14 @@ textarea:focus {
 .app-brand .brand-symbol {
   width: 46px;
   height: 46px;
-  background-size: 138%;
+  background-size: contain;
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2));
+}
+
+.auth-brand .brand-symbol {
+  background-color: rgba(255, 255, 255, 0.94);
+  background-size: 82%;
+  border-radius: 13px;
 }
 
 .auth-story > div {
@@ -4440,17 +4452,17 @@ textarea:focus {
 }
 
 .app-brand .brand-symbol {
-  width: 62px;
-  height: 54px;
-  background-image: url("assets/brand-logo-source.png");
-  background-position: -41px -31px;
-  background-size: 226px 123px;
-  border-radius: 10px;
-  filter: brightness(1.08) contrast(1.08) saturate(1.06);
+  width: 52px;
+  height: 52px;
+  background-image: url("assets/brand-symbol.svg");
+  background-position: center;
+  background-size: contain;
+  border-radius: 0;
+  filter: drop-shadow(0 5px 9px rgba(6, 43, 85, 0.14));
 }
 
 .app-brand .brand-word {
-  color: #101419;
+  color: #06192e;
   letter-spacing: -0.055em;
   transform: translateY(-1px);
 }

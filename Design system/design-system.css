@@ -68,11 +68,15 @@ a {
   height: 42px;
   display: block;
   flex: 0 0 auto;
-  background-image: url("../assets/brand-symbol.png");
+  background-image: url("../assets/brand-symbol.svg");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   filter: drop-shadow(0 5px 9px rgba(6, 43, 85, 0.12));
+}
+
+.brand-name > span {
+  color: var(--color-brand-600);
 }
 
 .brand-tag {
