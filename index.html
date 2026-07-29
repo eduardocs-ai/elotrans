@@ -409,7 +409,42 @@
       <div class="app-content" id="app-content"></div>
     </main>
     <nav class="app-mobile-nav" id="app-mobile-nav" aria-label="Navegacao principal do aplicativo"></nav>
+
+    <section class="carrier-gps-lock" id="carrier-gps-lock" role="alertdialog" aria-modal="true" aria-labelledby="carrier-gps-lock-title" hidden>
+      <div class="carrier-gps-lock-card">
+        <span class="carrier-gps-lock-symbol" aria-hidden="true"><i></i></span>
+        <p class="mini-label">Requisito de seguranca</p>
+        <h2 id="carrier-gps-lock-title">GPS obrigatorio durante a entrega</h2>
+        <p id="carrier-gps-lock-copy">Sua operacao fica bloqueada ate que a localizacao precisa seja ativada.</p>
+        <div class="carrier-gps-lock-rule">
+          <strong>O rastreamento nao pode ser pausado durante a rota</strong>
+          <span>Ele sera encerrado automaticamente depois que a ultima entrega for concluida.</span>
+        </div>
+        <button class="button button-primary" id="carrier-gps-lock-action" type="button">Ativar GPS e continuar</button>
+        <button class="carrier-gps-lock-logout" id="carrier-gps-lock-logout" type="button">Sair da conta</button>
+      </div>
+    </section>
   </section>
+
+  <dialog class="pwa-install-gate" id="pwa-install-gate" aria-labelledby="pwa-install-title">
+    <div class="pwa-install-card">
+      <div class="pwa-install-brand">
+        <span class="brand-symbol" aria-hidden="true"></span>
+        <span><strong>ViaFluxo</strong><small>Aplicativo operacional</small></span>
+      </div>
+      <span class="pwa-install-icon" aria-hidden="true">↓</span>
+      <p class="mini-label">Instalacao necessaria</p>
+      <h2 id="pwa-install-title">Use a ViaFluxo como aplicativo</h2>
+      <p>Para receber alertas, acessar a operacao com mais estabilidade e manter a experiencia em tela cheia, instale o aplicativo neste celular.</p>
+      <ol id="pwa-install-steps">
+        <li><span>1</span> Toque em instalar.</li>
+        <li><span>2</span> Confirme no aviso do navegador.</li>
+        <li><span>3</span> Abra a ViaFluxo pela tela inicial.</li>
+      </ol>
+      <button class="button button-primary" id="pwa-install-action" type="button" disabled>Preparando instalacao...</button>
+      <p class="pwa-install-feedback" id="pwa-install-feedback">Aguarde enquanto verificamos a compatibilidade do navegador.</p>
+    </div>
+  </dialog>
 
   <dialog class="notification-dialog" id="notification-dialog" aria-labelledby="notification-title">
     <div class="notification-panel">

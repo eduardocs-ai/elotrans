@@ -47,7 +47,7 @@ const NAVIGATION = {
   ],
   company: [
     ["overview", "Visao geral"],
-    ["routes", "Minhas rotas"],
+    ["routes", "Demandas"],
     ["proposals", "Propostas"],
     ["deliveries", "Entregas"],
     ["delivery-chat", "Conversas"],
@@ -136,6 +136,14 @@ const offerForm = document.querySelector("#offer-form");
 const offerRouteName = document.querySelector("#offer-route-name");
 const toast = document.querySelector("#product-toast");
 const installAppButtons = [...document.querySelectorAll(".install-app-button")];
+const pwaInstallGate = document.querySelector("#pwa-install-gate");
+const pwaInstallAction = document.querySelector("#pwa-install-action");
+const pwaInstallSteps = document.querySelector("#pwa-install-steps");
+const pwaInstallFeedback = document.querySelector("#pwa-install-feedback");
+const carrierGpsLock = document.querySelector("#carrier-gps-lock");
+const carrierGpsLockCopy = document.querySelector("#carrier-gps-lock-copy");
+const carrierGpsLockAction = document.querySelector("#carrier-gps-lock-action");
+const carrierGpsLockLogout = document.querySelector("#carrier-gps-lock-logout");
 const pickupInput = routeForm?.elements.pickup;
 const routeWizardSteps = [...document.querySelectorAll("[data-route-step]")];
 const routeWizardIndicators = [...document.querySelectorAll("[data-route-step-indicator]")];
@@ -161,6 +169,7 @@ let activeCarrierOpportunityFilter = "all";
 let routeWizardStep = 1;
 let carrierGpsWatchId = null;
 let carrierGpsLastWriteAt = 0;
+let carrierGpsEnforcementTimer = null;
 let carrierGpsState = {
   status: "idle",
   accuracy: null,
@@ -174,6 +183,7 @@ let currentPreviewUrl = null;
 let currentApprovalEmailHtml = "";
 let toastTimeout;
 let deferredInstallPrompt = null;
+let pwaInstallFallbackTimer = null;
 
 function readStorage(key, fallback) {
   try {
@@ -1074,6 +1084,78 @@ function openDialog(dialog) {
   if (dialog && !dialog.open) dialog.showModal();
 }
 
+function isStandaloneApp() {
+  return window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+}
+
+function isMobileBrowser() {
+  return navigator.userAgentData?.mobile === true
+    || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+}
+
+function renderManualPwaInstructions() {
+  if (!pwaInstallGate || deferredInstallPrompt || isStandaloneApp() || !isMobileBrowser()) return;
+  const isAppleDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  pwaInstallSteps.innerHTML = isAppleDevice
+    ? `
+      <li><span>1</span> No Safari, toque em Compartilhar.</li>
+      <li><span>2</span> Escolha "Adicionar a Tela de Inicio".</li>
+      <li><span>3</span> Confirme em "Adicionar" e abra o aplicativo.</li>
+    `
+    : `
+      <li><span>1</span> Abra o menu do navegador.</li>
+      <li><span>2</span> Toque em "Instalar app" ou "Adicionar a tela inicial".</li>
+      <li><span>3</span> Confirme e abra a ViaFluxo pelo novo icone.</li>
+    `;
+  pwaInstallAction.disabled = false;
+  pwaInstallAction.dataset.mode = "verify";
+  pwaInstallAction.textContent = "Ja instalei, verificar";
+  pwaInstallFeedback.textContent = "A instalacao e necessaria para continuar neste celular.";
+}
+
+function updatePwaInstallGate() {
+  if (!pwaInstallGate) return;
+  const shouldRequireInstall = isMobileBrowser() && !isStandaloneApp();
+  if (!shouldRequireInstall) {
+    if (pwaInstallGate.open) pwaInstallGate.close();
+    return;
+  }
+
+  openDialog(pwaInstallGate);
+  if (deferredInstallPrompt) {
+    if (pwaInstallFallbackTimer !== null) clearTimeout(pwaInstallFallbackTimer);
+    pwaInstallAction.disabled = false;
+    pwaInstallAction.dataset.mode = "prompt";
+    pwaInstallAction.textContent = "Instalar aplicativo";
+    pwaInstallFeedback.textContent = "A instalacao leva apenas alguns segundos.";
+  } else {
+    pwaInstallAction.disabled = true;
+    pwaInstallAction.dataset.mode = "waiting";
+    pwaInstallAction.textContent = "Preparando instalacao...";
+    pwaInstallFeedback.textContent = "Aguarde enquanto verificamos a compatibilidade do navegador.";
+    if (pwaInstallFallbackTimer !== null) clearTimeout(pwaInstallFallbackTimer);
+    pwaInstallFallbackTimer = window.setTimeout(renderManualPwaInstructions, 2500);
+  }
+}
+
+async function requestPwaInstall() {
+  if (!deferredInstallPrompt) return false;
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  if (choice.outcome === "accepted") {
+    pwaInstallFeedback.textContent = "Instalacao confirmada. Abra a ViaFluxo pela tela inicial.";
+    if (pwaInstallGate.open) pwaInstallGate.close();
+    return true;
+  }
+  renderManualPwaInstructions();
+  pwaInstallFeedback.textContent = "A instalacao foi cancelada. Instale pelo menu do navegador para continuar.";
+  return false;
+}
+
 function renderRouteWizardReview() {
   const data = Object.fromEntries(new FormData(routeForm).entries());
   routeReview.innerHTML = `
@@ -1335,6 +1417,9 @@ function availableNavigation(user) {
 }
 
 function showApp(user, { preserveDemoSession = false } = {}) {
+  if (currentUser?.role === "carrier" && user.role !== "carrier") {
+    stopCarrierGpsTracking(true);
+  }
   if (user.username === DEMO_OWNER_USERNAME) {
     demoSessionOwner = DEMO_OWNER_USERNAME;
   } else if (!preserveDemoSession) {
@@ -1358,18 +1443,21 @@ function showApp(user, { preserveDemoSession = false } = {}) {
     : `${ROLE_LABELS[user.role]} · ${statusLabel(user.status)}`;
   accountAvatar.textContent = initials(user.fullName);
   updateDemoModeVisibility();
+  startCarrierGpsEnforcement();
   renderNavigation();
   renderCurrentSection();
 }
 
 function logout() {
-  stopCarrierGpsTracking();
+  stopCarrierGpsTracking(true);
   currentUser = null;
   demoSessionOwner = null;
   localStorage.removeItem(STORAGE_KEYS.session);
   appShell.hidden = true;
+  carrierGpsLock.hidden = true;
   pageShell.hidden = false;
   setAppMenuOpen(false);
+  document.body.classList.remove("carrier-gps-locked");
   document.body.classList.remove("app-mode");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1393,7 +1481,7 @@ function mobileNavigationLabel(id, label) {
     registrations: "Cadastros",
     operations: "Operacoes",
     occurrences: "Alertas",
-    routes: "Rotas",
+    routes: "Demandas",
     opportunities: "Rotas",
     deliveries: "Entregas",
     "delivery-chat": "Conversas",
@@ -1476,6 +1564,7 @@ function renderCurrentSection() {
 
   configurePrimaryAction();
   updateNotificationBadge();
+  updateCarrierGpsLock();
 
   if (activeSection === "verification") {
     renderVerification();
@@ -1721,14 +1810,14 @@ function companyMetricDefinition(metric, routes) {
       description: "Historico completo das demandas publicadas pela empresa.",
       items: routes,
       section: "routes",
-      navigationLabel: "Abrir Minhas rotas",
+      navigationLabel: "Abrir Demandas",
     },
     "open-auctions": {
       title: "Leiloes abertos",
       description: "Rotas que ainda estao recebendo propostas de transportadores.",
       items: routes.filter((route) => route.status === "open"),
       section: "routes",
-      navigationLabel: "Abrir Minhas rotas",
+      navigationLabel: "Abrir Demandas",
     },
     "active-deliveries": {
       title: "Entregas em andamento",
@@ -2263,20 +2352,23 @@ function renderCompanySection() {
   }
 
   if (activeSection === "routes") {
-    const filteredRoutes = routes.filter((route) => {
-      if (activeCompanyRouteFilter === "open") return route.status === "open";
-      if (activeCompanyRouteFilter === "active") return ["assigned", "in-transit", "delayed", "arrived"].includes(route.status);
-      if (activeCompanyRouteFilter === "delivered") return route.status === "delivered";
+    const demandRoutes = routes.filter((route) => route.status === "open");
+    const filteredRoutes = demandRoutes.filter((route) => {
+      if (activeCompanyRouteFilter === "with-proposals") return route.proposals.length > 0;
+      if (activeCompanyRouteFilter === "without-proposals") return route.proposals.length === 0;
       return true;
     });
     appContent.innerHTML = `
       <section class="module-intro company-module-intro">
-        <div><p class="mini-label">Gestao de demandas</p><h2>Minhas rotas</h2><p>Consulte propostas, parceiros contratados e o andamento de cada operacao.</p></div>
-        <button class="button button-primary button-small" type="button" data-action="new-route">Publicar rota</button>
+        <div><p class="mini-label">Etapa comercial</p><h2>Demandas</h2><p>Gerencie apenas rotas publicadas que ainda estao buscando um transportador.</p></div>
+        <div class="module-summary"><span><strong>${demandRoutes.length}</strong> abertas</span><span><strong>${demandRoutes.reduce((total, route) => total + route.proposals.length, 0)}</strong> ofertas recebidas</span></div>
       </section>
-      ${renderCompanyRouteFilters(routes)}
+      <div class="company-demand-toolbar">
+        ${renderCompanyRouteFilters(demandRoutes)}
+        <button class="button button-primary button-small" type="button" data-action="new-route">Publicar demanda</button>
+      </div>
       <article class="app-card company-routes-card">
-        ${renderCompanyRouteCards(filteredRoutes, "routes")}
+        ${renderCompanyRouteCards(filteredRoutes, "demands")}
       </article>
     `;
     return;
@@ -2296,7 +2388,7 @@ function renderCompanySection() {
   }
 
   if (activeSection === "deliveries") {
-    const selectedRoute = routes.find((route) => route.id === selectedCompanyRouteId);
+    const selectedRoute = routes.find((route) => route.id === selectedCompanyRouteId && route.status !== "open");
     if (selectedRoute) {
       appContent.innerHTML = renderCompanyDeliveryDetail(selectedRoute, companyOccurrences);
       return;
@@ -2354,9 +2446,8 @@ function renderCompanyPriorities(routesWithOffers, occurrences) {
 function renderCompanyRouteFilters(routes) {
   const filters = [
     ["all", "Todas", routes.length],
-    ["open", "Recebendo propostas", routes.filter((route) => route.status === "open").length],
-    ["active", "Em andamento", routes.filter((route) => ["assigned", "in-transit", "delayed", "arrived"].includes(route.status)).length],
-    ["delivered", "Concluidas", routes.filter((route) => route.status === "delivered").length],
+    ["with-proposals", "Com propostas", routes.filter((route) => route.proposals.length > 0).length],
+    ["without-proposals", "Sem propostas", routes.filter((route) => route.proposals.length === 0).length],
   ];
   return `<div class="operations-filter company-route-filters">${filters.map(([id, label, count]) => `
     <button class="${activeCompanyRouteFilter === id ? "is-active" : ""}" type="button" data-action="filter-company-routes" data-company-route-filter="${id}">
@@ -2365,9 +2456,9 @@ function renderCompanyRouteFilters(routes) {
   `).join("")}</div>`;
 }
 
-function renderCompanyRouteCards(routes, mode = "routes") {
+function renderCompanyRouteCards(routes, mode = "demands") {
   if (!routes.length) {
-    return emptyState("Nenhuma rota nesta etapa", "Publique uma nova demanda ou selecione outro filtro.");
+    return emptyState("Nenhuma demanda neste filtro", "Publique uma demanda ou selecione outro filtro.");
   }
 
   return `<div class="company-route-list">${routes.map((route) => {
@@ -2377,16 +2468,16 @@ function renderCompanyRouteCards(routes, mode = "routes") {
       ? `<button class="table-button is-primary" type="button" data-action="view-company-route" data-route-id="${route.id}">Acompanhar</button>`
       : "";
     return `
-      <article class="company-route-row ${deliveryMode ? "is-delivery" : "is-route-registry"} ${route.status === "delayed" ? "is-delayed" : ""}">
+      <article class="company-route-row ${deliveryMode ? "is-delivery" : "is-route-registry is-demand"} ${route.status === "delayed" ? "is-delayed" : ""}">
         <div class="company-route-main">
           <span>${escapeHtml(route.reference || `#${route.id.replace("route-", "").slice(0, 8).toUpperCase()}`)}</span>
           <strong>${escapeHtml(route.origin)} <i>→</i> ${escapeHtml(route.destination)}</strong>
           <small>${escapeHtml(route.cargo)} · ${escapeHtml(route.vehicle)} · coleta ${formatDate(route.pickup)}</small>
         </div>
         <div class="company-route-provider">
-          <small>${deliveryMode ? "Transportador" : "Prazo solicitado"}</small>
-          <strong>${escapeHtml(deliveryMode ? (route.selectedCarrier || "Aguardando definicao") : route.deadline)}</strong>
-          <span>${escapeHtml(deliveryMode ? (route.lastUpdate || "Sem atualizacao") : `Coleta ${formatDate(route.pickup)}`)}</span>
+          <small>${deliveryMode ? "Transportador" : "Situacao comercial"}</small>
+          <strong>${escapeHtml(deliveryMode ? (route.selectedCarrier || "Aguardando definicao") : `${route.proposals.length} proposta(s) recebida(s)`)}</strong>
+          <span>${escapeHtml(deliveryMode ? (route.lastUpdate || "Sem atualizacao") : route.deadline)}</span>
         </div>
         <div class="company-route-progress">
           <span class="status ${statusClass(route.status)}">${escapeHtml(statusLabel(route.status))}</span>
@@ -2946,8 +3037,66 @@ function carrierOwnsRoute(route) {
     && (route.selectedCarrierUsername === currentUser.username || route.selectedCarrier === currentUser.fullName);
 }
 
+function carrierActiveRoutes() {
+  if (!currentUser || currentUser.role !== "carrier") return [];
+  return getRoutes().filter((route) =>
+    carrierOwnsRoute(route)
+    && ["assigned", "in-transit", "delayed", "arrived"].includes(route.status)
+  );
+}
+
+function carrierRequiresGps() {
+  return currentUser?.role === "carrier"
+    && currentUser.status === "approved"
+    && carrierActiveRoutes().length > 0;
+}
+
 function isCarrierGpsActive() {
   return carrierGpsState.status === "active" && carrierGpsWatchId !== null;
+}
+
+function updateCarrierGpsLock() {
+  if (!carrierGpsLock) return;
+  const activeRoutes = carrierActiveRoutes();
+  const isLocked = activeRoutes.length > 0 && !isCarrierGpsActive();
+  carrierGpsLock.hidden = !isLocked;
+  document.body.classList.toggle("carrier-gps-locked", isLocked);
+  if (!isLocked) return;
+
+  const isRequesting = carrierGpsState.status === "requesting";
+  carrierGpsLockCopy.textContent = isRequesting
+    ? "Autorize a localizacao precisa no navegador para liberar sua operacao."
+    : `${activeRoutes.length} entrega(s) ativa(s). ${carrierGpsState.message}`;
+  carrierGpsLockAction.disabled = isRequesting;
+  carrierGpsLockAction.textContent = isRequesting ? "Aguardando autorizacao..." : "Ativar GPS e continuar";
+}
+
+function startCarrierGpsEnforcement() {
+  if (carrierGpsEnforcementTimer !== null) clearInterval(carrierGpsEnforcementTimer);
+  carrierGpsEnforcementTimer = null;
+  if (!currentUser || currentUser.role !== "carrier") return;
+
+  carrierGpsEnforcementTimer = window.setInterval(() => {
+    if (!currentUser || currentUser.role !== "carrier") return;
+    if (!carrierRequiresGps()) {
+      updateCarrierGpsLock();
+      return;
+    }
+    const lastSignal = carrierGpsState.updatedAt ? new Date(carrierGpsState.updatedAt).getTime() : 0;
+    if (isCarrierGpsActive() && Date.now() - lastSignal > 120000) {
+      navigator.geolocation?.clearWatch(carrierGpsWatchId);
+      carrierGpsWatchId = null;
+      carrierGpsState = {
+        status: "unavailable",
+        accuracy: null,
+        updatedAt: null,
+        message: "O sinal do GPS foi interrompido. Reative a localizacao para continuar.",
+      };
+      renderCurrentSection();
+    } else {
+      updateCarrierGpsLock();
+    }
+  }, 15000);
 }
 
 function renderCarrierGpsRequirement(activeDeliveryCount = 1) {
@@ -3056,9 +3205,13 @@ function enableCarrierGpsTracking() {
   );
 }
 
-function stopCarrierGpsTracking() {
+function stopCarrierGpsTracking(stopEnforcement = false) {
   if (carrierGpsWatchId !== null && navigator.geolocation) {
     navigator.geolocation.clearWatch(carrierGpsWatchId);
+  }
+  if (stopEnforcement && carrierGpsEnforcementTimer !== null) {
+    clearInterval(carrierGpsEnforcementTimer);
+    carrierGpsEnforcementTimer = null;
   }
   carrierGpsWatchId = null;
   carrierGpsLastWriteAt = 0;
@@ -3068,6 +3221,7 @@ function stopCarrierGpsTracking() {
     updatedAt: null,
     message: "Ative o GPS para iniciar uma entrega.",
   };
+  updateCarrierGpsLock();
 }
 
 function confirmCarrierPickup(routeId) {
@@ -4070,8 +4224,13 @@ document.querySelectorAll(".js-close-dialog").forEach((button) => {
 
 document.querySelectorAll("dialog").forEach((dialog) => {
   dialog.addEventListener("click", (event) => {
+    if (dialog === pwaInstallGate) return;
     if (event.target === dialog) dialog.close();
   });
+});
+
+pwaInstallGate?.addEventListener("cancel", (event) => {
+  event.preventDefault();
 });
 
 loginForm.addEventListener("submit", (event) => {
@@ -4536,26 +4695,59 @@ window.addEventListener("beforeinstallprompt", (event) => {
   installAppButtons.forEach((button) => {
     button.hidden = false;
   });
+  updatePwaInstallGate();
 });
 
 installAppButtons.forEach((button) => {
   button.addEventListener("click", async () => {
-    if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
-    installAppButtons.forEach((installButton) => {
-      installButton.hidden = true;
-    });
+    const installed = await requestPwaInstall();
+    if (installed) {
+      installAppButtons.forEach((installButton) => {
+        installButton.hidden = true;
+      });
+    }
   });
 });
 
+pwaInstallAction?.addEventListener("click", async () => {
+  if (pwaInstallAction.dataset.mode === "prompt") {
+    await requestPwaInstall();
+    return;
+  }
+  window.location.reload();
+});
+
+carrierGpsLockAction?.addEventListener("click", enableCarrierGpsTracking);
+carrierGpsLockLogout?.addEventListener("click", logout);
+
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
+  if (pwaInstallFallbackTimer !== null) clearTimeout(pwaInstallFallbackTimer);
+  if (pwaInstallGate?.open) pwaInstallGate.close();
   installAppButtons.forEach((button) => {
     button.hidden = true;
   });
   showToast("ViaFluxo instalado no dispositivo.");
+});
+
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState !== "visible" || !carrierRequiresGps() || !navigator.permissions?.query) return;
+  try {
+    const permission = await navigator.permissions.query({ name: "geolocation" });
+    if (permission.state === "denied" && isCarrierGpsActive()) {
+      navigator.geolocation?.clearWatch(carrierGpsWatchId);
+      carrierGpsWatchId = null;
+      carrierGpsState = {
+        status: "denied",
+        accuracy: null,
+        updatedAt: null,
+        message: "A permissao de localizacao foi desligada. Reative o GPS para continuar.",
+      };
+      renderCurrentSection();
+    }
+  } catch {
+    updateCarrierGpsLock();
+  }
 });
 
 window.addEventListener("online", () => showToast("Conexao restabelecida."));
@@ -4620,11 +4812,13 @@ seedAudits();
 
 const restoredUser = resolveSession();
 if (restoredUser) showApp(restoredUser);
+updatePwaInstallGate();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {
       // The app remains usable online if service worker registration is unavailable.
     });
+    updatePwaInstallGate();
   });
 }
