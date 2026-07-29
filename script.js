@@ -116,6 +116,13 @@ const notificationDialog = document.querySelector("#notification-dialog");
 const notificationList = document.querySelector("#notification-list");
 const notificationSummary = document.querySelector("#notification-summary");
 const markNotificationsReadButton = document.querySelector("#mark-notifications-read");
+const metricDetailDialog = document.querySelector("#metric-detail-dialog");
+const metricDetailLabel = document.querySelector("#metric-detail-label");
+const metricDetailTitle = document.querySelector("#metric-detail-title");
+const metricDetailDescription = document.querySelector("#metric-detail-description");
+const metricDetailSummary = document.querySelector("#metric-detail-summary");
+const metricDetailList = document.querySelector("#metric-detail-list");
+const metricDetailNavigation = document.querySelector("#metric-detail-navigation");
 const legalDialog = document.querySelector("#legal-dialog");
 const legalTitle = document.querySelector("#legal-title");
 const legalContent = document.querySelector("#legal-content");
@@ -1695,15 +1702,121 @@ function renderAdminSection() {
   }[activeSection]);
 }
 
-function operationMetricCard(value, title, detail, tone) {
+function operationMetricCard(value, title, detail, tone, detailKey = "") {
   return `
-    <article class="operation-metric is-${tone}">
+    <article class="operation-metric is-${tone}${detailKey ? " has-detail" : ""}">
       <span class="operation-metric-icon" aria-hidden="true"></span>
       <strong>${escapeHtml(value)}</strong>
       <h3>${escapeHtml(title)}</h3>
       <p>${escapeHtml(detail)}</p>
+      ${detailKey ? `<button class="operation-metric-detail" type="button" data-action="view-company-metric" data-metric="${escapeHtml(detailKey)}">Ver detalhes</button>` : ""}
     </article>
   `;
+}
+
+function companyMetricDefinition(metric, routes) {
+  const definitions = {
+    "published-routes": {
+      title: "Rotas publicadas",
+      description: "Historico completo das demandas publicadas pela empresa.",
+      items: routes,
+      section: "routes",
+      navigationLabel: "Abrir Minhas rotas",
+    },
+    "open-auctions": {
+      title: "Leiloes abertos",
+      description: "Rotas que ainda estao recebendo propostas de transportadores.",
+      items: routes.filter((route) => route.status === "open"),
+      section: "routes",
+      navigationLabel: "Abrir Minhas rotas",
+    },
+    "active-deliveries": {
+      title: "Entregas em andamento",
+      description: "Operacoes contratadas que ainda nao foram concluidas.",
+      items: routes.filter((route) => ["assigned", "in-transit", "delayed", "arrived"].includes(route.status)),
+      section: "deliveries",
+      navigationLabel: "Abrir Entregas",
+    },
+    "routes-with-proposals": {
+      title: "Rotas com propostas",
+      description: "Leiloes com ofertas disponiveis para comparacao e escolha.",
+      items: routes.filter((route) => route.status === "open" && route.proposals?.length),
+      section: "proposals",
+      navigationLabel: "Abrir Propostas",
+    },
+    "delayed-deliveries": {
+      title: "Entregas atrasadas",
+      description: "Operacoes fora do prazo que precisam de acompanhamento.",
+      items: routes.filter((route) => route.status === "delayed"),
+      section: "deliveries",
+      navigationLabel: "Abrir Entregas",
+    },
+    "completed-deliveries": {
+      title: "Entregas concluidas",
+      description: "Entregas finalizadas e prontas para consulta de comprovantes.",
+      items: routes.filter((route) => route.status === "delivered"),
+      section: "deliveries",
+      navigationLabel: "Abrir Entregas",
+    },
+  };
+  return definitions[metric];
+}
+
+function companyMetricFacts(route, metric) {
+  const proposals = route.proposals ?? [];
+  const lowestProposal = proposals.length
+    ? Math.min(...proposals.map((proposal) => Number(proposal.amount)))
+    : null;
+  const facts = {
+    "published-routes": [["Coleta", formatDate(route.pickup)], ["Prazo", route.deadline]],
+    "open-auctions": [["Propostas", `${proposals.length} recebida(s)`], ["Prazo", route.deadline]],
+    "active-deliveries": [["Transportador", route.selectedCarrier || "Em definicao"], ["Atualizacao", route.lastUpdate || "Sem atualizacao"]],
+    "routes-with-proposals": [["Propostas", `${proposals.length} recebida(s)`], ["Menor oferta", lowestProposal === null ? "Sem oferta" : formatCurrency(lowestProposal)]],
+    "delayed-deliveries": [["Transportador", route.selectedCarrier || "Nao informado"], ["Atualizacao", route.lastUpdate || "Sem atualizacao"]],
+    "completed-deliveries": [["Transportador", route.selectedCarrier || "Nao informado"], ["Comprovante", route.proof ? "Disponivel" : "Entrega confirmada"]],
+  };
+  return facts[metric] ?? [];
+}
+
+function renderCompanyMetricRoute(route, metric) {
+  return `
+    <article class="metric-detail-row">
+      <header>
+        <div>
+          <span>${escapeHtml(route.id)}</span>
+          <strong>${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</strong>
+        </div>
+        <span class="status-pill ${statusClass(route.status)}">${escapeHtml(statusLabel(route.status))}</span>
+      </header>
+      <p>${escapeHtml(route.cargo)} · ${escapeHtml(route.vehicle)}</p>
+      <dl>
+        ${companyMetricFacts(route, metric).map(([label, value]) => `
+          <div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value || "Nao informado")}</dd></div>
+        `).join("")}
+      </dl>
+    </article>
+  `;
+}
+
+function openCompanyMetricDetail(metric) {
+  if (currentUser?.role !== "company") return;
+  const routes = getRoutes().filter((route) => route.owner === currentUser.username);
+  const definition = companyMetricDefinition(metric, routes);
+  if (!definition) return;
+
+  metricDetailLabel.textContent = "Detalhes do indicador";
+  metricDetailTitle.textContent = definition.title;
+  metricDetailDescription.textContent = definition.description;
+  metricDetailSummary.innerHTML = `
+    <strong>${definition.items.length}</strong>
+    <span>${definition.items.length === 1 ? "rota encontrada" : "rotas encontradas"}</span>
+  `;
+  metricDetailList.innerHTML = definition.items.length
+    ? definition.items.map((route) => renderCompanyMetricRoute(route, metric)).join("")
+    : `<div class="metric-detail-empty"><strong>Nenhuma rota neste indicador</strong><p>Quando houver movimentacao, os detalhes aparecerao aqui.</p></div>`;
+  metricDetailNavigation.textContent = definition.navigationLabel;
+  metricDetailNavigation.dataset.section = definition.section;
+  openDialog(metricDetailDialog);
 }
 
 function renderAttentionItems(routes, occurrences, pending) {
@@ -2137,12 +2250,12 @@ function renderCompanySection() {
       </section>
       <div class="company-dashboard">
         <div class="company-metrics overview-metrics-only">
-          ${operationMetricCard(routes.length, "Rotas publicadas", "Historico total da empresa", "blue")}
-          ${operationMetricCard(openRoutes.length, "Leiloes abertos", "Ainda recebendo propostas", "amber")}
-          ${operationMetricCard(activeRoutes.length, "Entregas em andamento", "Coleta, transito e atrasos", "blue")}
-          ${operationMetricCard(routesWithOffers.length, "Rotas com propostas", `${proposals} ofertas recebidas`, "navy")}
-          ${operationMetricCard(routes.filter((route) => route.status === "delayed").length, "Entregas atrasadas", "Precisam de acompanhamento", "red")}
-          ${operationMetricCard(deliveredRoutes.length, "Entregas concluidas", "Comprovantes disponiveis", "green")}
+          ${operationMetricCard(routes.length, "Rotas publicadas", "Historico total da empresa", "blue", "published-routes")}
+          ${operationMetricCard(openRoutes.length, "Leiloes abertos", "Ainda recebendo propostas", "amber", "open-auctions")}
+          ${operationMetricCard(activeRoutes.length, "Entregas em andamento", "Coleta, transito e atrasos", "blue", "active-deliveries")}
+          ${operationMetricCard(routesWithOffers.length, "Rotas com propostas", `${proposals} ofertas recebidas`, "navy", "routes-with-proposals")}
+          ${operationMetricCard(routes.filter((route) => route.status === "delayed").length, "Entregas atrasadas", "Precisam de acompanhamento", "red", "delayed-deliveries")}
+          ${operationMetricCard(deliveredRoutes.length, "Entregas concluidas", "Comprovantes disponiveis", "green", "completed-deliveries")}
         </div>
       </div>
     `;
@@ -4065,6 +4178,12 @@ notificationList?.addEventListener("click", (event) => {
   if (routeId && section === "proposals") openProposalComparison(routeId);
 });
 
+metricDetailNavigation?.addEventListener("click", () => {
+  const section = metricDetailNavigation.dataset.section;
+  metricDetailDialog.close();
+  if (section) navigateToAppSection(section);
+});
+
 document.querySelectorAll("[data-legal-view]").forEach((button) => {
   button.addEventListener("click", () => openLegalView(button.dataset.legalView));
 });
@@ -4124,6 +4243,7 @@ appContent.addEventListener("click", (event) => {
   if (action === "review-user") openDocumentReview(username);
   if (action === "new-route") openRouteDialog();
   if (action === "new-ticket") openDialog(supportDialog);
+  if (action === "view-company-metric") openCompanyMetricDetail(actionButton.dataset.metric);
   if (action === "compare-route") openProposalComparison(routeId);
   if (action === "offer-route") openOfferForm(routeId);
   if (action === "upload-document") uploadDocument(actionButton.dataset.documentKey);

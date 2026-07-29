@@ -97,6 +97,40 @@
   line-height: 1.45;
 }
 
+.operation-metric.has-detail {
+  min-height: 208px;
+  padding-bottom: 62px;
+}
+
+.operation-metric-detail {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  left: 22px;
+  min-height: 34px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--metric) 22%, #dbe4ed);
+  border-radius: 11px;
+  color: var(--metric);
+  background: color-mix(in srgb, var(--metric-soft) 48%, #fff);
+  font: inherit;
+  font-size: 0.69rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.operation-metric-detail:hover {
+  border-color: var(--metric);
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.operation-metric-detail:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--metric) 24%, transparent);
+  outline-offset: 2px;
+}
+
 .operations-overview-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(290px, .75fr);
@@ -4651,7 +4685,8 @@ textarea:focus {
   font: inherit;
 }
 
-.notification-dialog {
+.notification-dialog,
+.metric-detail-dialog {
   width: min(540px, calc(100% - 24px));
   max-height: min(760px, calc(100dvh - 24px));
   padding: 0;
@@ -4662,12 +4697,14 @@ textarea:focus {
 }
 
 .notification-dialog::backdrop,
+.metric-detail-dialog::backdrop,
 .legal-dialog::backdrop {
   background: rgba(3, 19, 38, 0.55);
   backdrop-filter: blur(6px);
 }
 
 .notification-panel,
+.metric-detail-panel,
 .legal-card {
   max-height: inherit;
   display: flex;
@@ -4680,6 +4717,7 @@ textarea:focus {
 }
 
 .notification-panel > header,
+.metric-detail-panel > header,
 .legal-card > header {
   display: flex;
   align-items: flex-start;
@@ -4688,10 +4726,152 @@ textarea:focus {
 }
 
 .notification-panel h2,
+.metric-detail-panel h2,
 .legal-card h2 {
   margin: 4px 0 0;
   font-family: var(--font-display);
   font-size: var(--text-xl);
+}
+
+.metric-detail-dialog {
+  width: min(760px, calc(100% - 24px));
+}
+
+.metric-detail-panel {
+  max-height: min(780px, calc(100dvh - 24px));
+}
+
+.metric-detail-description {
+  margin: 10px 0 0;
+  color: var(--color-ink-600);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.metric-detail-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 20px 0 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(8, 116, 223, 0.14);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eef7ff, #f8fbfe);
+  color: var(--color-ink-600);
+  font-size: var(--text-sm);
+}
+
+.metric-detail-summary strong {
+  color: var(--color-brand-800);
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+}
+
+.metric-detail-list {
+  min-height: 150px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.metric-detail-row {
+  padding: 17px;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.metric-detail-row > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.metric-detail-row > header > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.metric-detail-row > header span:first-child {
+  color: var(--color-ink-500);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-detail-row > header strong {
+  color: var(--color-ink-900);
+  font-size: var(--text-sm);
+}
+
+.metric-detail-row > p {
+  margin: 8px 0 14px;
+  color: var(--color-ink-600);
+  font-size: var(--text-xs);
+}
+
+.metric-detail-row dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.metric-detail-row dl > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-surface-soft);
+}
+
+.metric-detail-row dt {
+  color: var(--color-ink-500);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.metric-detail-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-ink-800);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.metric-detail-empty {
+  display: grid;
+  min-height: 180px;
+  place-content: center;
+  padding: 28px;
+  border: 1px dashed var(--color-line);
+  border-radius: 18px;
+  color: var(--color-ink-600);
+  text-align: center;
+}
+
+.metric-detail-empty strong {
+  color: var(--color-ink-900);
+}
+
+.metric-detail-empty p {
+  margin: 7px 0 0;
+  font-size: var(--text-xs);
+}
+
+.metric-detail-panel > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 18px -24px -24px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-line);
+  background: #fff;
 }
 
 .notification-toolbar {
@@ -7627,6 +7807,37 @@ textarea:focus {
   .company-metrics.overview-metrics-only,
   .carrier-metrics.overview-metrics-only {
     grid-template-columns: 1fr;
+  }
+
+  .metric-detail-dialog {
+    width: calc(100% - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .metric-detail-panel {
+    max-height: calc(100dvh - 12px);
+    padding: 20px 16px;
+    border-radius: 22px;
+  }
+
+  .metric-detail-row > header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .metric-detail-row dl {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-detail-panel > footer {
+    margin: 16px -16px -20px;
+    padding: 14px 16px;
+  }
+
+  .metric-detail-panel > footer .button {
+    flex: 1;
+    padding-inline: 12px;
   }
 }
 
