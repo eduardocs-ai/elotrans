@@ -212,7 +212,7 @@ function seedTestUsers() {
       username: "empresa.demo",
       password: "empresa123",
       fullName: "Alvorada Autopecas",
-      email: "empresa.demo@viafluxo.test",
+      email: "empresa.demo@transfluxo.test",
       phone: "(27) 3333-4821",
       role: "company",
       companyName: "Alvorada Autopecas",
@@ -226,7 +226,7 @@ function seedTestUsers() {
       username: "motorista.demo",
       password: "motorista123",
       fullName: "Marcos Fretes",
-      email: "motorista.demo@viafluxo.test",
+      email: "motorista.demo@transfluxo.test",
       phone: "(27) 99999-2140",
       role: "carrier",
       companyName: "",
@@ -286,7 +286,7 @@ function seedRoutes() {
         {
           id: "message-demo-welcome",
           senderRole: "system",
-          senderName: "ViaFluxo",
+          senderName: "TransFluxo",
           text: "Canal operacional criado. Empresa e transportador ja podem alinhar a coleta e a entrega por aqui.",
           createdAt: "2026-07-24T07:20:00.000Z",
         },
@@ -395,7 +395,7 @@ function seedRoutes() {
         {
           id: "message-demo-welcome",
           senderRole: "system",
-          senderName: "ViaFluxo",
+          senderName: "TransFluxo",
           text: "Canal operacional criado. Empresa e transportador ja podem alinhar a coleta e a entrega por aqui.",
           createdAt: "2026-07-24T07:20:00.000Z",
         },
@@ -664,7 +664,7 @@ function seedTickets() {
         },
         {
           senderRole: "admin",
-          senderName: "Equipe ViaFluxo",
+          senderName: "Equipe TransFluxo",
           text: "Obrigado pelo aviso. Voce consegue informar o modelo do aparelho e se estava usando Wi-Fi ou rede movel?",
           createdAt: "2026-07-25T10:15:00.000Z",
         },
@@ -739,7 +739,7 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
-function initials(name = "ViaFluxo") {
+function initials(name = "TransFluxo") {
   return name
     .split(" ")
     .filter(Boolean)
@@ -975,14 +975,14 @@ function buildApprovalEmail(user) {
   <html lang="pt-BR">
   <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cadastro aprovado</title></head>
   <body style="margin:0;padding:0;background:#e8eef2;color:#101419;font-family:Arial,Helvetica,sans-serif;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Sua conta foi verificada e ja pode acessar a ViaFluxo.</div>
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Sua conta foi verificada e ja pode acessar a TransFluxo.</div>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#e8eef2;">
       <tr><td align="center" style="padding:30px 12px;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:620px;background:#fff;border-radius:24px;overflow:hidden;">
           <tr><td style="height:8px;background:#ffc928;font-size:0;">&nbsp;</td></tr>
           <tr><td style="padding:26px 34px;background:#062b55;">
             <img src="${escapeHtml(logoUrl)}" width="46" height="46" alt="" style="display:inline-block;width:46px;height:46px;vertical-align:middle;border:0;">
-            <span style="display:inline-block;margin-left:9px;color:#fff;font-size:23px;font-weight:700;vertical-align:middle;">ViaFluxo</span>
+            <span style="display:inline-block;margin-left:9px;color:#fff;font-size:23px;font-weight:700;vertical-align:middle;">TransFluxo</span>
           </td></tr>
           <tr><td style="padding:38px 34px 18px;">
             <span style="display:inline-block;padding:7px 12px;border-radius:999px;background:#e4f7ee;color:#148558;font-size:12px;font-weight:700;">Verificacao concluida</span>
@@ -1007,11 +1007,11 @@ function buildApprovalEmail(user) {
           </td></tr>
           <tr><td style="padding:20px 34px;background:#f6f8fa;border-top:1px solid #dce3e8;">
             <p style="margin:0 0 7px;color:#27313b;font-size:13px;font-weight:700;">Proteja sua conta</p>
-            <p style="margin:0;color:#5f6b76;font-size:12px;line-height:1.6;">A ViaFluxo nunca solicitara sua senha por e-mail. Mantenha documentos e dados de contato atualizados.</p>
+            <p style="margin:0;color:#5f6b76;font-size:12px;line-height:1.6;">A TransFluxo nunca solicitara sua senha por e-mail. Mantenha documentos e dados de contato atualizados.</p>
           </td></tr>
           <tr><td style="padding:24px 34px;background:#06192e;">
             <p style="margin:0 0 6px;color:#fff;font-size:13px;font-weight:700;">Movendo entregas, conectando oportunidades.</p>
-            <p style="margin:0;color:#7794b1;font-size:11px;line-height:1.55;">Mensagem destinada a ${escapeHtml(user.email)} porque este cadastro foi aprovado na ViaFluxo.</p>
+            <p style="margin:0;color:#7794b1;font-size:11px;line-height:1.55;">Mensagem destinada a ${escapeHtml(user.email)} porque este cadastro foi aprovado na TransFluxo.</p>
           </td></tr>
         </table>
       </td></tr>
@@ -1020,7 +1020,7 @@ function buildApprovalEmail(user) {
 }
 
 function prepareApprovalEmail(user) {
-  const subject = `${user.fullName.split(" ")[0]}, seu cadastro na ViaFluxo foi aprovado`;
+  const subject = `${user.fullName.split(" ")[0]}, seu cadastro na TransFluxo foi aprovado`;
   const html = buildApprovalEmail(user);
   const emails = readStorage(STORAGE_KEYS.emails, []);
   emails.unshift({
@@ -1108,7 +1108,7 @@ function renderManualPwaInstructions() {
     : `
       <li><span>1</span> Abra o menu do navegador.</li>
       <li><span>2</span> Toque em "Instalar app" ou "Adicionar a tela inicial".</li>
-      <li><span>3</span> Confirme e abra a ViaFluxo pelo novo icone.</li>
+      <li><span>3</span> Confirme e abra a TransFluxo pelo novo icone.</li>
     `;
   pwaInstallAction.disabled = false;
   pwaInstallAction.dataset.mode = "verify";
@@ -1147,7 +1147,7 @@ async function requestPwaInstall() {
   const choice = await deferredInstallPrompt.userChoice;
   deferredInstallPrompt = null;
   if (choice.outcome === "accepted") {
-    pwaInstallFeedback.textContent = "Instalacao confirmada. Abra a ViaFluxo pela tela inicial.";
+    pwaInstallFeedback.textContent = "Instalacao confirmada. Abra a TransFluxo pela tela inicial.";
     if (pwaInstallGate.open) pwaInstallGate.close();
     return true;
   }
@@ -1287,7 +1287,7 @@ function demoGuideSteps(role) {
       ["Compare propostas", "Abra a rota Vitoria → Campos e compare preco, prazo e reputacao.", "proposals", "route-demo-1"],
       ["Contrate um parceiro", "Selecione Marcos Fretes para conectar os dois perfis no mesmo fluxo.", "proposals", "route-demo-1"],
       ["Acompanhe a entrega", "Mostre GPS, linha do tempo, documentos, chat e registro de ocorrencias.", "deliveries", "route-demo-3"],
-      ["Historico e suporte", "Consulte conversas arquivadas e abra um chamado para a ViaFluxo.", "delivery-chat", "route-demo-3"],
+      ["Historico e suporte", "Consulte conversas arquivadas e abra um chamado para a TransFluxo.", "delivery-chat", "route-demo-3"],
     ];
   }
   return [
@@ -1329,7 +1329,7 @@ function renderDemoGuide() {
     </div>
     <aside class="demo-pitch-note">
       <span>Ponto principal</span>
-      <p>A ViaFluxo concentra contratacao, acompanhamento e confianca em uma unica jornada para os dois lados da entrega.</p>
+      <p>A TransFluxo concentra contratacao, acompanhamento e confianca em uma unica jornada para os dois lados da entrega.</p>
     </aside>
   `;
 }
@@ -3725,7 +3725,7 @@ function renderSupportInboxEmpty() {
   return `
     <div class="support-inbox-empty">
       <strong>Nenhum chamado</strong>
-      <span>${currentUser.role === "admin" ? "Novas mensagens aparecerao aqui." : "Use o botao acima para falar com a ViaFluxo."}</span>
+      <span>${currentUser.role === "admin" ? "Novas mensagens aparecerao aqui." : "Use o botao acima para falar com a TransFluxo."}</span>
     </div>
   `;
 }
@@ -3776,7 +3776,7 @@ function replyToTicket(ticketId, text) {
   const now = new Date().toISOString();
   ticket.messages.push({
     senderRole: currentUser.role,
-    senderName: currentUser.role === "admin" ? "Equipe ViaFluxo" : currentUser.fullName,
+    senderName: currentUser.role === "admin" ? "Equipe TransFluxo" : currentUser.fullName,
     text: text.trim(),
     createdAt: now,
   });
@@ -3954,7 +3954,7 @@ function renderSettings() {
 }
 
 function renderGenericSection(content) {
-  const [title, copy] = content ?? ["Em construcao", "Esta area faz parte da arquitetura planejada para a ViaFluxo."];
+  const [title, copy] = content ?? ["Em construcao", "Esta area faz parte da arquitetura planejada para a TransFluxo."];
   appContent.innerHTML = `
     <article class="app-card span-12">
       <p class="mini-label">Modulo do produto</p>
@@ -4549,7 +4549,7 @@ supportForm.addEventListener("submit", (event) => {
   supportForm.reset();
   activeSection = "communications";
   renderCurrentSection();
-  showToast("Chamado enviado para a equipe ViaFluxo.");
+  showToast("Chamado enviado para a equipe TransFluxo.");
 });
 
 routeStepNext.addEventListener("click", () => {
@@ -4630,7 +4630,7 @@ proposalList.addEventListener("click", (event) => {
     {
       id: createId(),
       senderRole: "system",
-      senderName: "ViaFluxo",
+      senderName: "TransFluxo",
       text: "Canal operacional criado. Empresa e transportador ja podem alinhar a coleta e a entrega por aqui.",
       createdAt: new Date().toISOString(),
     },
@@ -4727,7 +4727,7 @@ window.addEventListener("appinstalled", () => {
   installAppButtons.forEach((button) => {
     button.hidden = true;
   });
-  showToast("ViaFluxo instalado no dispositivo.");
+  showToast("TransFluxo instalado no dispositivo.");
 });
 
 document.addEventListener("visibilitychange", async () => {

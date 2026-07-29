@@ -1,6 +1,6 @@
-# Design system — ViaFluxo
+# Design system — TransFluxo
 
-Este diretório reúne a base visual do produto ViaFluxo. A direção foi inspirada
+Este diretório reúne a base visual do produto TransFluxo. A direção foi inspirada
 nas referências `transport.webp` e `transport2.webp`, com superfícies claras,
 cartões amplos, cantos generosos, tipografia forte e detalhes de alto contraste.
 
@@ -45,7 +45,7 @@ abas, exibindo um perfil por vez em largura total. Cada cadastro possui uma aná
 documental com prévia de imagens e PDFs, lista de pendências e decisão de aprovação
 ou reprovação.
 
-Quando um cadastro é aprovado, a ViaFluxo gera um e-mail transacional personalizado
+Quando um cadastro é aprovado, a TransFluxo gera um e-mail transacional personalizado
 para o perfil. A comunicação confirma a liberação, apresenta os próximos passos,
 oferece acesso direto à plataforma e reforça orientações de segurança. O histórico
 do envio deverá ser conectado ao futuro provedor de e-mail.

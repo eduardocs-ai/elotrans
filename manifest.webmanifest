@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "ViaFluxo",
-  "short_name": "ViaFluxo",
+  "name": "TransFluxo",
+  "short_name": "TransFluxo",
   "description": "Rotas, propostas e entregas conectando empresas e transportadores.",
   "lang": "pt-BR",
   "start_url": "/",
@@ -28,7 +28,7 @@
   ],
   "shortcuts": [
     {
-      "name": "Abrir ViaFluxo",
+      "name": "Abrir TransFluxo",
       "short_name": "Inicio",
       "url": "/"
     }
