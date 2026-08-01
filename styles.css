@@ -8582,27 +8582,61 @@ body.carrier-gps-locked {
   overflow: visible;
 }
 
-.theme-map-road,
+.theme-route-shadow,
 .theme-map-route {
   fill: none;
   stroke-linecap: round;
 }
 
-.theme-map-road {
-  stroke: rgb(6 43 85 / 12%);
-  stroke-width: 11;
+.theme-brazil-shape {
+  fill: #dfeaf1;
+  stroke: #b8ccd9;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.theme-brazil-states path {
+  fill: none;
+  stroke: #c2d3de;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-route-shadow {
+  stroke: rgb(6 43 85 / 18%);
+  stroke-width: 13;
 }
 
 .theme-map-route {
   stroke: var(--color-brand-600);
-  stroke-width: 5;
-  stroke-dasharray: 12 8;
+  stroke-width: 7;
+  stroke-dasharray: 14 9;
 }
 
-.theme-route-map circle {
+.theme-route-point {
   fill: var(--color-surface);
   stroke: var(--color-brand-600);
   stroke-width: 5;
+}
+
+.theme-route-point.is-destination {
+  fill: var(--color-accent-500);
+  stroke: var(--color-brand-900);
+}
+
+.theme-map-vehicle circle {
+  fill: var(--color-brand-600);
+  stroke: var(--color-surface);
+  stroke-width: 4;
+}
+
+.theme-map-vehicle text {
+  fill: #fff;
+  font-family: var(--font-body);
+  font-size: 7px;
+  font-weight: 900;
+  text-anchor: middle;
 }
 
 .theme-route-label {
@@ -8643,20 +8677,6 @@ body.carrier-gps-locked {
   font-size: 0.64rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.theme-route-vehicle {
-  position: absolute;
-  top: 53%;
-  left: 48%;
-  z-index: 3;
-  padding: 7px 9px;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--color-brand-600);
-  box-shadow: 0 0 0 6px rgb(8 116 223 / 14%);
-  font-size: 0.5rem;
-  font-weight: 900;
 }
 
 .theme-route-empty {
@@ -8867,8 +8887,17 @@ body.carrier-gps-locked {
   background-size: 38px 38px, 72px 72px, auto;
 }
 
-.theme-dashboard-pulse .theme-map-road {
-  stroke: rgb(117 170 219 / 15%);
+.theme-dashboard-pulse .theme-brazil-shape {
+  fill: #0c2841;
+  stroke: #1a496d;
+}
+
+.theme-dashboard-pulse .theme-brazil-states path {
+  stroke: #17405f;
+}
+
+.theme-dashboard-pulse .theme-route-shadow {
+  stroke: rgb(0 0 0 / 42%);
 }
 
 .theme-dashboard-pulse .theme-route-label {

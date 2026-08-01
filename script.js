@@ -1732,21 +1732,47 @@ function themedMetricTiles(metrics, limit = metrics.length) {
   `).join("");
 }
 
+const BRAZIL_STATE_POINTS = {
+  AC: [94, 216], AL: [410, 252], AP: [304, 88], AM: [157, 145], BA: [360, 271], CE: [405, 187],
+  DF: [301, 274], ES: [391, 337], GO: [282, 283], MA: [350, 166], MT: [226, 247], MS: [237, 324],
+  MG: [338, 323], PA: [285, 151], PB: [429, 215], PR: [300, 389], PE: [418, 232], PI: [366, 204],
+  RJ: [368, 354], RN: [433, 194], RS: [284, 454], RO: [148, 235], RR: [183, 77], SC: [303, 420],
+  SP: [315, 357], SE: [404, 265], TO: [305, 218],
+};
+
+function brazilMapPoint(location, fallback) {
+  const state = String(location || "").match(/\b([A-Z]{2})\s*$/)?.[1];
+  return BRAZIL_STATE_POINTS[state] || fallback;
+}
+
 function themedRouteVisual(route, emptyLabel = "Nenhuma rota ativa agora") {
   if (!route) {
     return `<div class="theme-route-empty"><strong>${escapeHtml(emptyLabel)}</strong><span>O mapa sera preenchido quando uma operacao comecar.</span></div>`;
   }
+  const [originX, originY] = brazilMapPoint(route.origin, [245, 310]);
+  const [destinationX, destinationY] = brazilMapPoint(route.destination, [360, 250]);
+  const middleX = Math.round((originX + destinationX) / 2);
+  const middleY = Math.round((originY + destinationY) / 2 - Math.max(22, Math.abs(destinationX - originX) * 0.16));
+  const vehicleX = Math.round((originX + destinationX + middleX * 2) / 4);
+  const vehicleY = Math.round((originY + destinationY + middleY * 2) / 4);
   return `
     <div class="theme-route-map" aria-label="Rota de ${escapeHtml(route.origin)} para ${escapeHtml(route.destination)}">
-      <svg viewBox="0 0 620 250" role="img" aria-hidden="true">
-        <path class="theme-map-road" d="M20 190 C100 105 175 208 250 128 S390 25 455 110 S540 196 605 54"></path>
-        <path class="theme-map-route" d="M52 188 C125 120 184 194 252 128 S385 45 452 111 S536 172 580 76"></path>
-        <circle cx="52" cy="188" r="9"></circle>
-        <circle cx="580" cy="76" r="11"></circle>
+      <svg viewBox="40 20 440 480" role="img" aria-label="Mapa do Brasil com trajeto da entrega">
+        <defs>
+          <filter id="brazil-map-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-opacity="0.12"></feDropShadow></filter>
+        </defs>
+        <path class="theme-brazil-shape" filter="url(#brazil-map-shadow)" d="M105 45 L158 55 L196 38 L238 52 L273 38 L318 60 L351 54 L379 79 L421 92 L448 126 L431 158 L452 188 L436 214 L449 248 L426 274 L419 312 L392 331 L381 364 L352 384 L340 421 L311 443 L294 478 L270 451 L253 414 L231 388 L216 350 L181 335 L159 305 L128 288 L110 256 L75 235 L91 199 L67 169 L90 139 L79 105 L101 80 Z"></path>
+        <g class="theme-brazil-states" aria-hidden="true">
+          <path d="M102 81 L157 145 L91 199 M158 55 L157 145 L238 52 M157 145 L226 247 L94 216 M238 52 L285 151 L318 60 M285 151 L305 218 L350 166 L379 79 M226 247 L282 283 L305 218 M148 235 L226 247 L181 335 M226 247 L237 324 L282 283 M282 283 L338 323 L360 271 L305 218 M350 166 L366 204 L405 187 M366 204 L360 271 L418 232 M360 271 L404 265 L392 331 M237 324 L315 357 L338 323 M315 357 L300 389 L231 388 M338 323 L368 354 L391 337 M300 389 L303 420 L340 421 M303 420 L284 454 L270 451"></path>
+        </g>
+        <path class="theme-route-shadow" d="M${originX} ${originY} Q${middleX} ${middleY} ${destinationX} ${destinationY}"></path>
+        <path class="theme-map-route" d="M${originX} ${originY} Q${middleX} ${middleY} ${destinationX} ${destinationY}"></path>
+        <circle class="theme-route-point is-origin" cx="${originX}" cy="${originY}" r="9"></circle>
+        <circle class="theme-route-point is-destination" cx="${destinationX}" cy="${destinationY}" r="11"></circle>
+        <g class="theme-map-vehicle" transform="translate(${vehicleX} ${vehicleY})"><circle r="15"></circle><text x="0" y="4">GPS</text></g>
       </svg>
       <div class="theme-route-label is-origin"><small>Origem</small><strong>${escapeHtml(route.origin)}</strong></div>
       <div class="theme-route-label is-destination"><small>Destino</small><strong>${escapeHtml(route.destination)}</strong></div>
-      <span class="theme-route-vehicle">GPS</span>
     </div>
   `;
 }
