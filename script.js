@@ -1481,6 +1481,21 @@ function availableNavigation(user) {
   return NAVIGATION[user.role];
 }
 
+function appearanceStorageKey(username = currentUser?.username) {
+  return `${STORAGE_KEYS.appearance}:${username || "guest"}`;
+}
+
+function selectedDisplayMode(username = currentUser?.username) {
+  const savedMode = localStorage.getItem(appearanceStorageKey(username)) || "standard";
+  return DISPLAY_MODE_OPTIONS.some((mode) => mode.id === savedMode) ? savedMode : "standard";
+}
+
+function applyDisplayMode(modeId, { save = false } = {}) {
+  const validMode = DISPLAY_MODE_OPTIONS.some((mode) => mode.id === modeId) ? modeId : "standard";
+  appShell.dataset.displayMode = validMode;
+  if (save && currentUser) localStorage.setItem(appearanceStorageKey(), validMode);
+}
+
 function showApp(user, { preserveDemoSession = false } = {}) {
   if (currentUser?.role === "carrier" && user.role !== "carrier") {
     stopCarrierGpsTracking(true);
@@ -1491,6 +1506,7 @@ function showApp(user, { preserveDemoSession = false } = {}) {
     demoSessionOwner = null;
   }
   currentUser = user;
+  applyDisplayMode(selectedDisplayMode(user.username));
   activeSection = defaultSectionFor(user);
   pageShell.hidden = true;
   appShell.hidden = false;
@@ -1525,6 +1541,7 @@ function logout() {
   setAppMenuOpen(false);
   document.body.classList.remove("carrier-gps-locked");
   document.body.classList.remove("app-mode");
+  appShell.dataset.displayMode = "standard";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -3999,8 +4016,7 @@ function renderDocumentCenter() {
 }
 
 function renderSettings() {
-  const appearanceKey = `${STORAGE_KEYS.appearance}:${currentUser.username}`;
-  const selectedMode = localStorage.getItem(appearanceKey) || "standard";
+  const selectedMode = selectedDisplayMode();
   const appearanceCards = DISPLAY_MODE_OPTIONS.map((mode) => {
     const isSelected = selectedMode === mode.id;
     return `
@@ -4014,11 +4030,11 @@ function renderSettings() {
             <p class="mini-label">${mode.profile}</p>
             <h4>${mode.name}</h4>
           </div>
-          ${isSelected ? '<span class="appearance-selected-badge">Favorito</span>' : ""}
+          ${isSelected ? '<span class="appearance-selected-badge">Ativo</span>' : ""}
         </div>
         <p>${mode.description}</p>
         <button class="table-button ${isSelected ? "" : "is-primary"}" type="button" data-action="select-display-mode" data-display-mode="${mode.id}">
-          ${isSelected ? "Selecionado para avaliacao" : "Selecionar para avaliacao"}
+          ${isSelected ? "Modo em uso" : "Usar este modo"}
         </button>
       </article>
     `;
@@ -4045,11 +4061,12 @@ function renderSettings() {
           <div>
             <p class="mini-label">Aparencia</p>
             <h3>Escolha como voce prefere visualizar a plataforma.</h3>
-            <p>O modo atual continua ativo. Por enquanto, a escolha abaixo salva apenas sua preferencia para avaliacao e nao altera as telas.</p>
+            <p>A mudanca e aplicada imediatamente neste perfil e fica salva para os proximos acessos.</p>
           </div>
           <div class="appearance-current-mode">
             <span>Modo ativo</span>
-            <strong>Padrao atual</strong>
+            <strong>${selectedMode === "standard" ? "Padrao atual" : DISPLAY_MODE_OPTIONS.find((mode) => mode.id === selectedMode)?.name}</strong>
+            ${selectedMode !== "standard" ? '<button class="appearance-reset" type="button" data-action="select-display-mode" data-display-mode="standard">Voltar ao padrao</button>' : ""}
           </div>
         </header>
         <div class="appearance-options">${appearanceCards}</div>
@@ -4581,9 +4598,9 @@ appContent.addEventListener("click", (event) => {
   if (action === "offer-route") openOfferForm(routeId);
   if (action === "upload-document") uploadDocument(actionButton.dataset.documentKey);
   if (action === "select-display-mode") {
-    localStorage.setItem(`${STORAGE_KEYS.appearance}:${currentUser.username}`, actionButton.dataset.displayMode);
+    applyDisplayMode(actionButton.dataset.displayMode, { save: true });
     renderSettings();
-    showToast("Preferencia visual salva. O modo atual permanece ativo durante a avaliacao.");
+    showToast("Aparencia atualizada e salva neste perfil.");
   }
   if (action === "select-ticket") {
     selectedSupportTicketId = actionButton.dataset.ticketId;
