@@ -1,9 +1,10 @@
-const CACHE_NAME = "transfluxo-app-v3";
+const CACHE_NAME = "transfluxo-app-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/styles.css",
   "/script.js",
+  "/supabase-client.js",
   "/design-lab.html",
   "/design-lab.css",
   "/design-lab.js",

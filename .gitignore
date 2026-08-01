@@ -1,3 +1,5 @@
 dist/
+node_modules/
+/supabase-client.js
 *.tar.gz
 sources/

@@ -185,6 +185,32 @@ let toastTimeout;
 let deferredInstallPrompt = null;
 let pwaInstallFallbackTimer = null;
 
+function backendUser(profile) {
+  return {
+    id: profile.id,
+    username: profile.username,
+    fullName: profile.full_name,
+    email: profile.email,
+    phone: profile.phone || "",
+    role: profile.role,
+    status: profile.status,
+    createdAt: profile.created_at,
+    organizationId: profile.organization_id,
+    documents: profile.documents || {},
+    backend: true,
+  };
+}
+
+function friendlyBackendError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  if (message.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
+  if (message.includes("email not confirmed")) return "Confirme seu e-mail antes de entrar.";
+  if (message.includes("user already registered")) return "Ja existe uma conta com este e-mail.";
+  if (message.includes("password")) return "A senha precisa ter pelo menos 6 caracteres.";
+  if (!navigator.onLine) return "Voce esta offline. Conecte-se para acessar sua conta real.";
+  return "Nao foi possivel concluir agora. Tente novamente em instantes.";
+}
+
 function readStorage(key, fallback) {
   try {
     const value = localStorage.getItem(key);
@@ -1450,6 +1476,7 @@ function showApp(user, { preserveDemoSession = false } = {}) {
 
 function logout() {
   stopCarrierGpsTracking(true);
+  if (currentUser?.backend) window.TransFluxoBackend?.signOut().catch(() => {});
   currentUser = null;
   demoSessionOwner = null;
   localStorage.removeItem(STORAGE_KEYS.session);
@@ -4119,6 +4146,29 @@ function uploadDocument(documentKey) {
     const file = input.files?.[0];
     if (!file) return;
 
+    if (currentUser.backend) {
+      try {
+        const saved = await window.TransFluxoBackend.uploadRegistrationDocument(documentKey, file);
+        currentUser.documents = {
+          ...(currentUser.documents ?? {}),
+          [documentKey]: {
+            name: saved.original_name,
+            type: saved.mime_type,
+            size: saved.file_size,
+            storageKey: saved.storage_path,
+            uploadedAt: saved.created_at,
+            remote: true,
+          },
+        };
+        renderVerification();
+        const progress = documentProgress(currentUser);
+        showToast(`Documento enviado com seguranca. Progresso: ${progress.sent}/${progress.total}.`);
+      } catch {
+        showToast("Nao foi possivel enviar o arquivo. Verifique a conexao e tente novamente.");
+      }
+      return;
+    }
+
     const users = getUsers();
     const user = users.find((item) => item.username === currentUser.username);
     if (!user) return;
@@ -4233,7 +4283,7 @@ pwaInstallGate?.addEventListener("cancel", (event) => {
   event.preventDefault();
 });
 
-loginForm.addEventListener("submit", (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   loginFeedback.textContent = "";
   const data = Object.fromEntries(new FormData(loginForm).entries());
@@ -4251,16 +4301,33 @@ loginForm.addEventListener("submit", (event) => {
   }
 
   const user = getUsers().find((item) => item.username === username);
-  if (!user || user.password !== data.password) {
-    loginFeedback.textContent = "Usuario ou senha incorretos.";
+  if (user && user.password === data.password) {
+    showApp(user);
+    loginForm.reset();
     return;
   }
 
-  showApp(user);
-  loginForm.reset();
+  if (!username.includes("@") || !window.TransFluxoBackend?.enabled) {
+    loginFeedback.textContent = "E-mail ou senha incorretos.";
+    return;
+  }
+
+  const submit = loginForm.querySelector('[type="submit"]');
+  submit.disabled = true;
+  submit.textContent = "Entrando...";
+  try {
+    const { profile } = await window.TransFluxoBackend.signIn(username, data.password);
+    showApp(backendUser(profile));
+    loginForm.reset();
+  } catch (error) {
+    loginFeedback.textContent = friendlyBackendError(error);
+  } finally {
+    submit.disabled = false;
+    submit.textContent = "Entrar na TransFluxo";
+  }
 });
 
-registerForm.addEventListener("submit", (event) => {
+registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   registerFeedback.textContent = "";
   if (!registerForm.reportValidity()) return;
@@ -4298,16 +4365,45 @@ registerForm.addEventListener("submit", (event) => {
     createdAt: new Date().toISOString(),
   };
 
-  users.push(user);
-  saveUsers(users);
-  registerForm.reset();
-  updateRegistrationFields();
-  showApp(user);
-  showToast("Cadastro enviado. A equipe administrativa agora pode iniciar a verificacao.");
+  if (!window.TransFluxoBackend?.enabled) {
+    registerFeedback.textContent = "O cadastro real exige conexao com a internet.";
+    return;
+  }
+
+  const submit = registerForm.querySelector('[type="submit"]');
+  submit.disabled = true;
+  submit.textContent = "Criando conta segura...";
+  try {
+    const result = await window.TransFluxoBackend.signUp(user);
+    registerForm.reset();
+    updateRegistrationFields();
+    if (result.profile) {
+      showApp(backendUser(result.profile));
+      showToast("Cadastro enviado. A equipe administrativa agora pode iniciar a verificacao.");
+    } else {
+      registerFeedback.textContent = "Cadastro criado. Confirme o link enviado ao seu e-mail para entrar.";
+    }
+  } catch (error) {
+    registerFeedback.textContent = friendlyBackendError(error);
+  } finally {
+    submit.disabled = false;
+    submit.textContent = "Enviar cadastro para analise";
+  }
 });
 
-document.querySelector("#forgot-password").addEventListener("click", () => {
-  loginFeedback.textContent = "A recuperacao por e-mail sera habilitada quando o backend for conectado.";
+document.querySelector("#forgot-password").addEventListener("click", async () => {
+  const email = loginForm.elements.username.value.trim().toLowerCase();
+  if (!email.includes("@")) {
+    loginFeedback.textContent = "Informe seu e-mail no campo acima para recuperar a senha.";
+    return;
+  }
+  try {
+    const { error } = await window.TransFluxoBackend.client.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
+    if (error) throw error;
+    loginFeedback.textContent = "Enviamos as instrucoes de recuperacao para seu e-mail.";
+  } catch (error) {
+    loginFeedback.textContent = friendlyBackendError(error);
+  }
 });
 
 notificationButton?.addEventListener("click", openNotifications);
@@ -4812,6 +4908,11 @@ seedAudits();
 
 const restoredUser = resolveSession();
 if (restoredUser) showApp(restoredUser);
+if (!restoredUser && window.TransFluxoBackend?.enabled) {
+  window.TransFluxoBackend.restoreSession()
+    .then((result) => result?.profile && showApp(backendUser(result.profile)))
+    .catch(() => {});
+}
 updatePwaInstallGate();
 
 if ("serviceWorker" in navigator) {

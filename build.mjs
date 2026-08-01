@@ -1,13 +1,24 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const output = join(root, "dist", "server", "index.js");
+await build({
+  entryPoints: [join(root, "src", "supabase-client.js")],
+  bundle: true,
+  format: "iife",
+  minify: true,
+  outfile: join(root, "supabase-client.js"),
+  target: ["es2020"],
+});
+
 const sourceFiles = [
   "index.html",
   "styles.css",
   "script.js",
+  "supabase-client.js",
   "manifest.webmanifest",
   "service-worker.js",
   "design-lab.html",
