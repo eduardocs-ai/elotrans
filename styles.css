@@ -3328,9 +3328,11 @@ textarea:focus {
   gap: 18px;
 }
 
-.site-footer-links button {
+.site-footer-links button,
+.site-footer-links a {
   color: rgba(255, 255, 255, 0.74);
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .window-head {
@@ -4898,7 +4900,8 @@ textarea:focus {
 }
 
 .notification-toolbar button,
-.site-footer-links button {
+.site-footer-links button,
+.site-footer-links a {
   padding: 0;
   border: 0;
   color: var(--color-brand-700);
