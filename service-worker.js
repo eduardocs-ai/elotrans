@@ -1,23 +1,14 @@
-const CACHE_NAME = "transfluxo-app-v9";
+const CACHE_NAME = "transfluxo-app-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/styles.css",
   "/script.js",
   "/supabase-client.js",
-  "/design-lab.html",
-  "/design-lab.css",
-  "/design-lab.js",
   "/manifest.webmanifest",
   "/Design%20system/tokens.css",
   "/assets/brand-logo-source.png",
   "/assets/brand-symbol.png",
-  "/assets/data/brazil-map-data.js",
-  "/assets/design-options/atlas.png",
-  "/assets/design-options/pulse.png",
-  "/assets/design-options/journey.png",
-  "/assets/design-options/grid.png",
-  "/assets/design-options/go.png",
 ];
 
 self.addEventListener("install", (event) => {

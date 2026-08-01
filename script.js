@@ -21,46 +21,8 @@ const STORAGE_KEYS = {
   audits: "viafluxo-audits-v1",
   vehicles: "viafluxo-vehicles-v1",
   notifications: "viafluxo-notifications-v1",
-  appearance: "transfluxo-appearance-v1",
+  appearance: "transfluxo-appearance-v2",
 };
-
-const DISPLAY_MODE_OPTIONS = [
-  {
-    id: "atlas",
-    name: "Atlas",
-    profile: "Executivo e claro",
-    description: "Metricas, mapas e decisoes em uma estrutura leve para empresas e administradores.",
-    image: "assets/design-options/atlas.png",
-  },
-  {
-    id: "pulse",
-    name: "Pulse",
-    profile: "Operacao ao vivo",
-    description: "Centro de controle escuro com GPS, alertas e ocorrencias em tempo real.",
-    image: "assets/design-options/pulse.png",
-  },
-  {
-    id: "journey",
-    name: "Journey",
-    profile: "Humano e editorial",
-    description: "A entrega vira uma jornada visual simples, com timeline, motorista e comprovantes.",
-    image: "assets/design-options/journey.png",
-  },
-  {
-    id: "grid",
-    name: "Grid",
-    profile: "Modular e escalavel",
-    description: "Blocos organizados por assunto para crescer sem repetir informacoes entre abas.",
-    image: "assets/design-options/grid.png",
-  },
-  {
-    id: "go",
-    name: "Go",
-    profile: "Mobile em primeiro lugar",
-    description: "Experiencia direta para transportadores, com GPS, rota, chat e comprovante.",
-    image: "assets/design-options/go.png",
-  },
-];
 
 const DOCUMENT_DATABASE = {
   name: "viafluxo-documents-v1",
@@ -1485,15 +1447,15 @@ function appearanceStorageKey(username = currentUser?.username) {
   return `${STORAGE_KEYS.appearance}:${username || "guest"}`;
 }
 
-function selectedDisplayMode(username = currentUser?.username) {
-  const savedMode = localStorage.getItem(appearanceStorageKey(username)) || "standard";
-  return DISPLAY_MODE_OPTIONS.some((mode) => mode.id === savedMode) ? savedMode : "standard";
+function selectedAppearance(username = currentUser?.username) {
+  return localStorage.getItem(appearanceStorageKey(username)) === "dark" ? "dark" : "light";
 }
 
-function applyDisplayMode(modeId, { save = false } = {}) {
-  const validMode = DISPLAY_MODE_OPTIONS.some((mode) => mode.id === modeId) ? modeId : "standard";
-  appShell.dataset.displayMode = validMode;
-  if (save && currentUser) localStorage.setItem(appearanceStorageKey(), validMode);
+function applyAppearance(mode, { save = false } = {}) {
+  const appearance = mode === "dark" ? "dark" : "light";
+  appShell.dataset.appearance = appearance;
+  document.body.dataset.appTheme = appearance;
+  if (save && currentUser) localStorage.setItem(appearanceStorageKey(), appearance);
 }
 
 function showApp(user, { preserveDemoSession = false } = {}) {
@@ -1506,7 +1468,7 @@ function showApp(user, { preserveDemoSession = false } = {}) {
     demoSessionOwner = null;
   }
   currentUser = user;
-  applyDisplayMode(selectedDisplayMode(user.username));
+  applyAppearance(selectedAppearance(user.username));
   activeSection = defaultSectionFor(user);
   pageShell.hidden = true;
   appShell.hidden = false;
@@ -1541,7 +1503,8 @@ function logout() {
   setAppMenuOpen(false);
   document.body.classList.remove("carrier-gps-locked");
   document.body.classList.remove("app-mode");
-  appShell.dataset.displayMode = "standard";
+  delete document.body.dataset.appTheme;
+  delete appShell.dataset.appearance;
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1721,138 +1684,6 @@ function renderWelcome(title, copy, badge) {
   `;
 }
 
-function themedMetricTiles(metrics, limit = metrics.length) {
-  return metrics.slice(0, limit).map((metric, index) => `
-    <article class="theme-metric theme-tone-${metric.tone || "blue"}">
-      <span>${String(index + 1).padStart(2, "0")}</span>
-      <strong>${escapeHtml(String(metric.value))}</strong>
-      <h3>${escapeHtml(metric.label)}</h3>
-      <p>${escapeHtml(metric.detail)}</p>
-    </article>
-  `).join("");
-}
-
-function brazilMapPoint(location, fallback) {
-  const state = String(location || "").match(/\b([A-Z]{2})\s*$/)?.[1];
-  return window.BRAZIL_MAP_DATA?.states.find((item) => item.uf === state)?.point || fallback;
-}
-
-function themedRouteVisual(route, emptyLabel = "Nenhuma rota ativa agora") {
-  if (!route) {
-    return `<div class="theme-route-empty"><strong>${escapeHtml(emptyLabel)}</strong><span>O mapa sera preenchido quando uma operacao comecar.</span></div>`;
-  }
-  const [originX, originY] = brazilMapPoint(route.origin, [245, 310]);
-  const [destinationX, destinationY] = brazilMapPoint(route.destination, [360, 250]);
-  const middleX = Math.round((originX + destinationX) / 2);
-  const middleY = Math.round((originY + destinationY) / 2 - Math.max(22, Math.abs(destinationX - originX) * 0.16));
-  const vehicleX = Math.round((originX + destinationX + middleX * 2) / 4);
-  const vehicleY = Math.round((originY + destinationY + middleY * 2) / 4);
-  const mapData = window.BRAZIL_MAP_DATA;
-  const statePaths = mapData?.states
-    .map((state) => `<path class="theme-brazil-state" data-uf="${state.uf}" d="${state.path}"></path>`)
-    .join("") || "";
-  return `
-    <div class="theme-route-map" aria-label="Rota de ${escapeHtml(route.origin)} para ${escapeHtml(route.destination)}">
-      <svg viewBox="${mapData?.viewBox || "0 0 500 500"}" role="img" aria-label="Mapa oficial do Brasil com trajeto da entrega">
-        <defs>
-          <filter id="brazil-map-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-opacity="0.12"></feDropShadow></filter>
-        </defs>
-        <g class="theme-brazil-states" filter="url(#brazil-map-shadow)" aria-hidden="true">${statePaths}</g>
-        <path class="theme-route-shadow" d="M${originX} ${originY} Q${middleX} ${middleY} ${destinationX} ${destinationY}"></path>
-        <path class="theme-map-route" d="M${originX} ${originY} Q${middleX} ${middleY} ${destinationX} ${destinationY}"></path>
-        <circle class="theme-route-point is-origin" cx="${originX}" cy="${originY}" r="9"></circle>
-        <circle class="theme-route-point is-destination" cx="${destinationX}" cy="${destinationY}" r="11"></circle>
-        <g class="theme-map-vehicle" transform="translate(${vehicleX} ${vehicleY})"><circle r="15"></circle><text x="0" y="4">GPS</text></g>
-      </svg>
-      <div class="theme-route-label is-origin"><small>Origem</small><strong>${escapeHtml(route.origin)}</strong></div>
-      <div class="theme-route-label is-destination"><small>Destino</small><strong>${escapeHtml(route.destination)}</strong></div>
-    </div>
-  `;
-}
-
-function themedAlertItems(items) {
-  if (!items.length) return `<div class="theme-alert-empty">Nenhum alerta exige intervencao agora.</div>`;
-  return items.slice(0, 4).map((item) => `
-    <div class="theme-alert-item theme-tone-${item.tone || "blue"}">
-      <i></i><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.copy)}</span></div>
-    </div>
-  `).join("");
-}
-
-function renderThemedOverview(mode, context) {
-  const routeTitle = context.route
-    ? `${context.route.origin} → ${context.route.destination}`
-    : "Operacao aguardando nova rota";
-  const routeCopy = context.route
-    ? `${context.route.cargo || "Carga cadastrada"} · ${statusLabel(context.route.status)}`
-    : "Os proximos movimentos aparecerao aqui.";
-  const action = `<button class="table-button is-primary" type="button" data-action="go-section" data-section-target="${context.primarySection}">${escapeHtml(context.primaryLabel)}</button>`;
-  const performanceBars = [42, 64, 55, 78, 68, 92, 83].map((value, index) => `<span style="--theme-bar:${value}%"><i>${index + 1}</i></span>`).join("");
-
-  if (mode === "atlas") {
-    return `
-      <section class="theme-dashboard theme-dashboard-atlas">
-        <header class="theme-dashboard-head"><div><p>${escapeHtml(context.eyebrow)}</p><h2>${escapeHtml(context.title)}</h2><span>${escapeHtml(context.copy)}</span></div>${action}</header>
-        <div class="theme-atlas-metrics">${themedMetricTiles(context.metrics, 4)}</div>
-        <div class="theme-atlas-layout">
-          <article class="theme-panel theme-atlas-map"><header><div><small>Mapa operacional</small><h3>${escapeHtml(routeTitle)}</h3></div><span class="theme-live-pill">Ao vivo</span></header>${themedRouteVisual(context.route)}</article>
-          <article class="theme-panel theme-atlas-chart"><small>Desempenho semanal</small><h3>${escapeHtml(context.score)}</h3><p>Indice consolidado da operacao</p><div class="theme-performance-bars">${performanceBars}</div></article>
-          <article class="theme-panel theme-atlas-feed"><header><div><small>Prioridades</small><h3>O que pede atencao</h3></div></header>${themedAlertItems(context.alerts)}</article>
-        </div>
-      </section>`;
-  }
-
-  if (mode === "pulse") {
-    return `
-      <section class="theme-dashboard theme-dashboard-pulse">
-        <header class="theme-pulse-head"><div><span class="theme-live-dot"></span><p>OPERACAO AO VIVO</p><small>Atualizado agora</small></div>${action}</header>
-        <div class="theme-pulse-metrics">${themedMetricTiles(context.metrics, 5)}</div>
-        <div class="theme-pulse-layout">
-          <article class="theme-panel theme-pulse-map"><header><div><small>Monitoramento</small><h2>${escapeHtml(routeTitle)}</h2><p>${escapeHtml(routeCopy)}</p></div><span class="theme-live-pill">GPS online</span></header>${themedRouteVisual(context.route)}</article>
-          <aside class="theme-panel theme-pulse-alerts"><header><small>Fila de ocorrencias</small><strong>${context.alerts.length}</strong></header>${themedAlertItems(context.alerts)}</aside>
-          <article class="theme-panel theme-pulse-signal"><div><small>Saude da operacao</small><strong>${escapeHtml(context.score)}</strong><span>Sinal estavel</span></div><div class="theme-signal-ring"><i></i></div></article>
-          <article class="theme-panel theme-pulse-timeline"><small>Eventos recentes</small>${themedAlertItems(context.alerts.slice().reverse())}</article>
-        </div>
-      </section>`;
-  }
-
-  if (mode === "journey") {
-    return `
-      <section class="theme-dashboard theme-dashboard-journey">
-        <header class="theme-journey-head"><div><p>${escapeHtml(context.eyebrow)}</p><h2>${escapeHtml(context.title)}</h2><span>${escapeHtml(context.copy)}</span></div><div class="theme-journey-summary">${context.metrics.slice(0, 4).map((metric) => `<span><strong>${escapeHtml(String(metric.value))}</strong>${escapeHtml(metric.label)}</span>`).join("")}</div></header>
-        <article class="theme-panel theme-journey-route">
-          <header><div><span class="theme-live-pill">Em andamento</span><h3>${escapeHtml(routeTitle)}</h3><p>${escapeHtml(routeCopy)}</p></div>${action}</header>
-          <div class="theme-journey-body">${themedRouteVisual(context.route)}<aside><small>Responsavel pela jornada</small><strong>${escapeHtml(context.partner)}</strong><span>${escapeHtml(context.score)} de confiabilidade</span><button class="table-button" type="button" data-action="go-section" data-section-target="${context.chatSection}">${escapeHtml(context.chatLabel)}</button></aside></div>
-          <div class="theme-journey-steps"><span class="is-done"><i>1</i>Publicada</span><span class="is-done"><i>2</i>Coleta</span><span class="is-current"><i>3</i>Em transito</span><span><i>4</i>Entrega</span></div>
-        </article>
-        <div class="theme-journey-metrics">${themedMetricTiles(context.metrics.slice(0, 3))}</div>
-      </section>`;
-  }
-
-  if (mode === "grid") {
-    return `
-      <section class="theme-dashboard theme-dashboard-grid">
-        <header class="theme-dashboard-head"><div><p>${escapeHtml(context.eyebrow)}</p><h2>${escapeHtml(context.title)}</h2><span>${escapeHtml(context.copy)}</span></div>${action}</header>
-        <div class="theme-bento-grid">
-          ${themedMetricTiles(context.metrics, 3)}
-          <article class="theme-panel theme-bento-volume"><small>Volume operacional</small><strong>${escapeHtml(String(context.metrics[3]?.value || 0))}</strong><h3>${escapeHtml(context.metrics[3]?.label || "Em analise")}</h3><div class="theme-performance-bars">${performanceBars}</div></article>
-          <article class="theme-panel theme-bento-map"><header><small>Rotas em tempo real</small><strong>${escapeHtml(routeTitle)}</strong></header>${themedRouteVisual(context.route)}</article>
-          <article class="theme-panel theme-bento-queue"><header><small>Fila prioritaria</small><strong>${context.alerts.length}</strong></header>${themedAlertItems(context.alerts)}</article>
-          <article class="theme-panel theme-bento-score"><small>Qualidade de servico</small><strong>${escapeHtml(context.score)}</strong><span>Prazo · cuidado · comunicacao</span></article>
-        </div>
-      </section>`;
-  }
-
-  return `
-    <section class="theme-dashboard theme-dashboard-go">
-      <header class="theme-go-head"><div><p>${escapeHtml(context.eyebrow)}</p><h2>${escapeHtml(context.title)}</h2><span>${escapeHtml(context.copy)}</span></div><span class="theme-go-avatar">${escapeHtml(initials(currentUser.fullName))}</span></header>
-      <div class="theme-go-layout">
-        <article class="theme-go-route-card"><header><span>Rota em destaque</span><strong>${escapeHtml(String(context.metrics[2]?.value || 0))} ativas</strong></header><h3>${escapeHtml(routeTitle)}</h3><p>${escapeHtml(routeCopy)}</p>${themedRouteVisual(context.route)}${action}</article>
-        <div class="theme-go-side"><div class="theme-go-metrics">${themedMetricTiles(context.metrics, 4)}</div><article class="theme-panel theme-go-alerts"><header><small>Atualizacoes importantes</small><strong>${context.alerts.length}</strong></header>${themedAlertItems(context.alerts)}</article></div>
-      </div>
-    </section>`;
-}
-
 function renderAdminSection() {
   const users = getUsers();
   const routes = getRoutes();
@@ -1865,37 +1696,6 @@ function renderAdminSection() {
     const activeOperations = routes.filter((route) => ["assigned", "in-transit", "delayed", "arrived"].includes(route.status));
     const openOccurrences = occurrences.filter((occurrence) => occurrence.status !== "resolved");
     const criticalOccurrences = openOccurrences.filter((occurrence) => occurrence.severity === "critical");
-    const dashboardMode = selectedDisplayMode();
-    if (dashboardMode !== "standard") {
-      const delayedRoutes = routes.filter((route) => route.status === "delayed");
-      const adminMetrics = [
-        { value: activeOperations.length, label: "Entregas em andamento", detail: "Em toda a plataforma", tone: "blue" },
-        { value: routes.filter((route) => route.status === "open").length, label: "Leiloes ativos", detail: "Recebendo propostas", tone: "navy" },
-        { value: delayedRoutes.length, label: "Entregas atrasadas", detail: "Exigem acompanhamento", tone: "red" },
-        { value: criticalOccurrences.length, label: "Ocorrencias criticas", detail: `${openOccurrences.length} abertas no total`, tone: "amber" },
-        { value: "94%", label: "Entregas no prazo", detail: "Ultimos 30 dias", tone: "green" },
-      ];
-      const adminAlerts = [
-        ...criticalOccurrences.map((item) => ({ title: item.title || "Ocorrencia critica", copy: item.description || "Requer analise da equipe", tone: "red" })),
-        ...delayedRoutes.map((route) => ({ title: "Entrega atrasada", copy: `${route.origin} → ${route.destination}`, tone: "amber" })),
-        ...pending.map((user) => ({ title: "Cadastro pendente", copy: `${user.fullName} aguarda verificacao`, tone: "blue" })),
-      ];
-      appContent.innerHTML = renderThemedOverview(dashboardMode, {
-        eyebrow: "Central administrativa",
-        title: `Ola, ${currentUser.fullName.split(" ")[0]}.`,
-        copy: "Acompanhe a rede, antecipe riscos e direcione a equipe.",
-        metrics: adminMetrics,
-        route: activeOperations[0] || routes.find((route) => route.status === "open"),
-        alerts: adminAlerts,
-        score: "94%",
-        partner: "Equipe TransFluxo",
-        primarySection: "operations",
-        primaryLabel: "Abrir operacoes",
-        chatSection: "communications",
-        chatLabel: "Abrir suporte",
-      });
-      return;
-    }
     appContent.innerHTML = `
       ${renderWelcome(
         `Ola, ${currentUser.fullName.split(" ")[0]}.`,
@@ -2578,39 +2378,6 @@ function renderCompanySection() {
     const routesWithOffers = routes.filter((route) => route.status === "open" && route.proposals.length);
     const deliveredRoutes = routes.filter((route) => route.status === "delivered");
     const openRoutes = routes.filter((route) => route.status === "open");
-    const dashboardMode = selectedDisplayMode();
-    if (dashboardMode !== "standard") {
-      const delayedRoutes = routes.filter((route) => route.status === "delayed");
-      const companyMetrics = [
-        { value: routes.length, label: "Rotas publicadas", detail: "Historico da empresa", tone: "blue" },
-        { value: openRoutes.length, label: "Leiloes abertos", detail: "Recebendo propostas", tone: "amber" },
-        { value: activeRoutes.length, label: "Entregas em andamento", detail: "Rastreamento ativo", tone: "blue" },
-        { value: proposals, label: "Propostas recebidas", detail: `${routesWithOffers.length} rotas com ofertas`, tone: "navy" },
-        { value: delayedRoutes.length, label: "Entregas atrasadas", detail: "Precisam de atencao", tone: "red" },
-        { value: deliveredRoutes.length, label: "Concluidas", detail: "Comprovantes disponiveis", tone: "green" },
-      ];
-      const companyAlerts = [
-        ...delayedRoutes.map((route) => ({ title: "Previsao em risco", copy: `${route.origin} → ${route.destination}`, tone: "red" })),
-        ...routesWithOffers.map((route) => ({ title: `${route.proposals.length} proposta(s) para comparar`, copy: `${route.origin} → ${route.destination}`, tone: "blue" })),
-        ...companyOccurrences.filter((item) => item.status !== "resolved").map((item) => ({ title: item.title || "Ocorrencia aberta", copy: item.description || "Acompanhe a tratativa", tone: "amber" })),
-      ];
-      const focusRoute = activeRoutes[0] || openRoutes[0] || routes[0];
-      appContent.innerHTML = renderThemedOverview(dashboardMode, {
-        eyebrow: "Painel da empresa",
-        title: "Sua operacao em um unico olhar.",
-        copy: "Custos, propostas e entregas organizados para decidir mais rapido.",
-        metrics: companyMetrics,
-        route: focusRoute,
-        alerts: companyAlerts,
-        score: routes.length ? "96%" : "—",
-        partner: focusRoute?.selectedCarrier || "Transportador em definicao",
-        primarySection: activeRoutes.length ? "deliveries" : "routes",
-        primaryLabel: activeRoutes.length ? "Acompanhar entregas" : "Ver demandas",
-        chatSection: "delivery-chat",
-        chatLabel: "Abrir conversa",
-      });
-      return;
-    }
     appContent.innerHTML = `
       <section class="module-intro company-module-intro overview-metrics-intro">
         <div><p class="mini-label">Leitura executiva</p><h2>Indicadores da operacao</h2><p>Uma visao numerica do desempenho da empresa, sem repetir rotas, propostas ou entregas.</p></div>
@@ -2999,39 +2766,6 @@ function renderCarrierSection() {
     const activeDeliveries = myDeliveries.filter((route) => route.status !== "delivered");
     const completedDeliveries = myDeliveries.filter((route) => route.status === "delivered");
     const activeOffers = myOffers.filter((offer) => offer.route.status === "open");
-    const dashboardMode = selectedDisplayMode();
-    if (dashboardMode !== "standard") {
-      const delayedDeliveries = activeDeliveries.filter((route) => route.status === "delayed");
-      const carrierMetrics = [
-        { value: availableRoutes.length, label: "Oportunidades", detail: "Rotas disponiveis", tone: "blue" },
-        { value: myOffers.length, label: "Propostas enviadas", detail: "Historico comercial", tone: "navy" },
-        { value: activeDeliveries.length, label: "Entregas ativas", detail: "Com GPS obrigatorio", tone: "amber" },
-        { value: activeOffers.length, label: "Em analise", detail: "Aguardando empresas", tone: "amber" },
-        { value: completedDeliveries.length, label: "Concluidas", detail: "Com comprovante", tone: "green" },
-        { value: myDeliveries.length ? "98,2" : "—", label: "Seu score", detail: "Confiabilidade", tone: "green" },
-      ];
-      const carrierAlerts = [
-        ...delayedDeliveries.map((route) => ({ title: "Entrega com atraso", copy: `${route.origin} → ${route.destination}`, tone: "red" })),
-        ...activeDeliveries.map((route) => ({ title: "GPS obrigatorio", copy: `${route.origin} → ${route.destination}`, tone: "amber" })),
-        ...availableRoutes.slice(0, 2).map((route) => ({ title: "Nova oportunidade", copy: `${route.origin} → ${route.destination}`, tone: "blue" })),
-      ];
-      const focusRoute = activeDeliveries[0] || availableRoutes[0] || myDeliveries[0];
-      appContent.innerHTML = renderThemedOverview(dashboardMode, {
-        eyebrow: "Painel do transportador",
-        title: `Pronto para seguir, ${currentUser.fullName.split(" ")[0]}?`,
-        copy: "Rotas, GPS e propostas no ritmo da sua operacao.",
-        metrics: carrierMetrics,
-        route: focusRoute,
-        alerts: carrierAlerts,
-        score: myDeliveries.length ? "98,2" : "—",
-        partner: focusRoute?.companyName || focusRoute?.owner || "Empresa contratante",
-        primarySection: activeDeliveries.length ? "deliveries" : "opportunities",
-        primaryLabel: activeDeliveries.length ? "Continuar entrega" : "Buscar rotas",
-        chatSection: "delivery-chat",
-        chatLabel: "Abrir conversa",
-      });
-      return;
-    }
     appContent.innerHTML = `
       <section class="module-intro carrier-module-intro overview-metrics-intro">
         <div><p class="mini-label">Leitura executiva</p><h2>Indicadores da sua operacao</h2><p>Um resumo numerico do desempenho, sem repetir oportunidades, propostas ou entregas.</p></div>
@@ -4245,30 +3979,7 @@ function renderDocumentCenter() {
 }
 
 function renderSettings() {
-  const selectedMode = selectedDisplayMode();
-  const appearanceCards = DISPLAY_MODE_OPTIONS.map((mode) => {
-    const isSelected = selectedMode === mode.id;
-    return `
-      <article class="appearance-option ${isSelected ? "is-selected" : ""}">
-        <a class="appearance-preview" href="${mode.image}" target="_blank" rel="noopener" aria-label="Ampliar proposta ${mode.name}">
-          <img src="${mode.image}" alt="Proposta visual ${mode.name} para a plataforma TransFluxo" loading="lazy">
-          <span>Ampliar imagem</span>
-        </a>
-        <div class="appearance-option-copy">
-          <div>
-            <p class="mini-label">${mode.profile}</p>
-            <h4>${mode.name}</h4>
-          </div>
-          ${isSelected ? '<span class="appearance-selected-badge">Ativo</span>' : ""}
-        </div>
-        <p>${mode.description}</p>
-        <button class="table-button ${isSelected ? "" : "is-primary"}" type="button" data-action="select-display-mode" data-display-mode="${mode.id}">
-          ${isSelected ? "Modo em uso" : "Usar este modo"}
-        </button>
-      </article>
-    `;
-  }).join("");
-
+  const appearance = selectedAppearance();
   appContent.innerHTML = `
     <div class="app-grid">
       <article class="app-card span-8">
@@ -4285,20 +3996,21 @@ function renderSettings() {
         <h3>Acesso da conta</h3>
         <p>Use uma senha exclusiva, encerre a sessao em dispositivos compartilhados e mantenha seus dados de recuperacao atualizados.</p>
       </article>
-      <article class="app-card span-12 appearance-settings">
-        <header class="appearance-settings-header">
-          <div>
-            <p class="mini-label">Aparencia</p>
-            <h3>Escolha como voce prefere visualizar a plataforma.</h3>
-            <p>A mudanca e aplicada imediatamente neste perfil e fica salva para os proximos acessos.</p>
-          </div>
-          <div class="appearance-current-mode">
-            <span>Modo ativo</span>
-            <strong>${selectedMode === "standard" ? "Padrao atual" : DISPLAY_MODE_OPTIONS.find((mode) => mode.id === selectedMode)?.name}</strong>
-            ${selectedMode !== "standard" ? '<button class="appearance-reset" type="button" data-action="select-display-mode" data-display-mode="standard">Voltar ao padrao</button>' : ""}
-          </div>
-        </header>
-        <div class="appearance-options">${appearanceCards}</div>
+      <article class="app-card span-12 theme-settings-card">
+        <div class="theme-settings-head">
+          <div><p class="mini-label">Aparencia</p><h3>Escolha o modo de exibicao</h3><p>O painel mantem a mesma estrutura e salva a escolha somente neste perfil.</p></div>
+          <span class="theme-mode-status">Modo ativo: <strong>${appearance === "dark" ? "Escuro" : "Claro"}</strong></span>
+        </div>
+        <div class="theme-mode-options">
+          <button class="theme-mode-option ${appearance === "light" ? "is-selected" : ""}" type="button" data-action="set-appearance" data-appearance="light">
+            <span class="theme-mode-preview is-light"><i></i><i></i><i></i></span>
+            <strong>Claro</strong><small>Visual padrao da TransFluxo</small>
+          </button>
+          <button class="theme-mode-option ${appearance === "dark" ? "is-selected" : ""}" type="button" data-action="set-appearance" data-appearance="dark">
+            <span class="theme-mode-preview is-dark"><i></i><i></i><i></i></span>
+            <strong>Escuro</strong><small>Menos brilho para ambientes noturnos</small>
+          </button>
+        </div>
       </article>
     </div>
   `;
@@ -4826,10 +4538,10 @@ appContent.addEventListener("click", (event) => {
   if (action === "compare-route") openProposalComparison(routeId);
   if (action === "offer-route") openOfferForm(routeId);
   if (action === "upload-document") uploadDocument(actionButton.dataset.documentKey);
-  if (action === "select-display-mode") {
-    applyDisplayMode(actionButton.dataset.displayMode, { save: true });
+  if (action === "set-appearance") {
+    applyAppearance(actionButton.dataset.appearance, { save: true });
     renderSettings();
-    showToast("Aparencia atualizada e salva neste perfil.");
+    showToast(`Modo ${actionButton.dataset.appearance === "dark" ? "escuro" : "claro"} ativado.`);
   }
   if (action === "select-ticket") {
     selectedSupportTicketId = actionButton.dataset.ticketId;
