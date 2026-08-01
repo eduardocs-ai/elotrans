@@ -21,7 +21,46 @@ const STORAGE_KEYS = {
   audits: "viafluxo-audits-v1",
   vehicles: "viafluxo-vehicles-v1",
   notifications: "viafluxo-notifications-v1",
+  appearance: "transfluxo-appearance-v1",
 };
+
+const DISPLAY_MODE_OPTIONS = [
+  {
+    id: "atlas",
+    name: "Atlas",
+    profile: "Executivo e claro",
+    description: "Metricas, mapas e decisoes em uma estrutura leve para empresas e administradores.",
+    image: "assets/design-options/atlas.png",
+  },
+  {
+    id: "pulse",
+    name: "Pulse",
+    profile: "Operacao ao vivo",
+    description: "Centro de controle escuro com GPS, alertas e ocorrencias em tempo real.",
+    image: "assets/design-options/pulse.png",
+  },
+  {
+    id: "journey",
+    name: "Journey",
+    profile: "Humano e editorial",
+    description: "A entrega vira uma jornada visual simples, com timeline, motorista e comprovantes.",
+    image: "assets/design-options/journey.png",
+  },
+  {
+    id: "grid",
+    name: "Grid",
+    profile: "Modular e escalavel",
+    description: "Blocos organizados por assunto para crescer sem repetir informacoes entre abas.",
+    image: "assets/design-options/grid.png",
+  },
+  {
+    id: "go",
+    name: "Go",
+    profile: "Mobile em primeiro lugar",
+    description: "Experiencia direta para transportadores, com GPS, rota, chat e comprovante.",
+    image: "assets/design-options/go.png",
+  },
+];
 
 const DOCUMENT_DATABASE = {
   name: "viafluxo-documents-v1",
@@ -3960,6 +3999,31 @@ function renderDocumentCenter() {
 }
 
 function renderSettings() {
+  const appearanceKey = `${STORAGE_KEYS.appearance}:${currentUser.username}`;
+  const selectedMode = localStorage.getItem(appearanceKey) || "standard";
+  const appearanceCards = DISPLAY_MODE_OPTIONS.map((mode) => {
+    const isSelected = selectedMode === mode.id;
+    return `
+      <article class="appearance-option ${isSelected ? "is-selected" : ""}">
+        <a class="appearance-preview" href="${mode.image}" target="_blank" rel="noopener" aria-label="Ampliar proposta ${mode.name}">
+          <img src="${mode.image}" alt="Proposta visual ${mode.name} para a plataforma TransFluxo" loading="lazy">
+          <span>Ampliar imagem</span>
+        </a>
+        <div class="appearance-option-copy">
+          <div>
+            <p class="mini-label">${mode.profile}</p>
+            <h4>${mode.name}</h4>
+          </div>
+          ${isSelected ? '<span class="appearance-selected-badge">Favorito</span>' : ""}
+        </div>
+        <p>${mode.description}</p>
+        <button class="table-button ${isSelected ? "" : "is-primary"}" type="button" data-action="select-display-mode" data-display-mode="${mode.id}">
+          ${isSelected ? "Selecionado para avaliacao" : "Selecionar para avaliacao"}
+        </button>
+      </article>
+    `;
+  }).join("");
+
   appContent.innerHTML = `
     <div class="app-grid">
       <article class="app-card span-8">
@@ -3975,6 +4039,20 @@ function renderSettings() {
         <p class="mini-label">Seguranca</p>
         <h3>Acesso da conta</h3>
         <p>Use uma senha exclusiva, encerre a sessao em dispositivos compartilhados e mantenha seus dados de recuperacao atualizados.</p>
+      </article>
+      <article class="app-card span-12 appearance-settings">
+        <header class="appearance-settings-header">
+          <div>
+            <p class="mini-label">Aparencia</p>
+            <h3>Escolha como voce prefere visualizar a plataforma.</h3>
+            <p>O modo atual continua ativo. Por enquanto, a escolha abaixo salva apenas sua preferencia para avaliacao e nao altera as telas.</p>
+          </div>
+          <div class="appearance-current-mode">
+            <span>Modo ativo</span>
+            <strong>Padrao atual</strong>
+          </div>
+        </header>
+        <div class="appearance-options">${appearanceCards}</div>
       </article>
     </div>
   `;
@@ -4502,6 +4580,11 @@ appContent.addEventListener("click", (event) => {
   if (action === "compare-route") openProposalComparison(routeId);
   if (action === "offer-route") openOfferForm(routeId);
   if (action === "upload-document") uploadDocument(actionButton.dataset.documentKey);
+  if (action === "select-display-mode") {
+    localStorage.setItem(`${STORAGE_KEYS.appearance}:${currentUser.username}`, actionButton.dataset.displayMode);
+    renderSettings();
+    showToast("Preferencia visual salva. O modo atual permanece ativo durante a avaliacao.");
+  }
   if (action === "select-ticket") {
     selectedSupportTicketId = actionButton.dataset.ticketId;
     renderSupportSection();

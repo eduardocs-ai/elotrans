@@ -1,4 +1,4 @@
-const CACHE_NAME = "transfluxo-app-v4";
+const CACHE_NAME = "transfluxo-app-v5";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -12,6 +12,11 @@ const APP_SHELL = [
   "/Design%20system/tokens.css",
   "/assets/brand-logo-source.png",
   "/assets/brand-symbol.png",
+  "/assets/design-options/atlas.png",
+  "/assets/design-options/pulse.png",
+  "/assets/design-options/journey.png",
+  "/assets/design-options/grid.png",
+  "/assets/design-options/go.png",
 ];
 
 self.addEventListener("install", (event) => {
