@@ -8588,19 +8588,13 @@ body.carrier-gps-locked {
   stroke-linecap: round;
 }
 
-.theme-brazil-shape {
+.theme-brazil-state {
   fill: #dfeaf1;
   stroke: #b8ccd9;
-  stroke-width: 2;
+  stroke-width: 0.75;
   stroke-linejoin: round;
-}
-
-.theme-brazil-states path {
-  fill: none;
-  stroke: #c2d3de;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill-rule: evenodd;
+  vector-effect: non-scaling-stroke;
 }
 
 .theme-route-shadow {
@@ -8887,13 +8881,9 @@ body.carrier-gps-locked {
   background-size: 38px 38px, 72px 72px, auto;
 }
 
-.theme-dashboard-pulse .theme-brazil-shape {
+.theme-dashboard-pulse .theme-brazil-state {
   fill: #0c2841;
   stroke: #1a496d;
-}
-
-.theme-dashboard-pulse .theme-brazil-states path {
-  stroke: #17405f;
 }
 
 .theme-dashboard-pulse .theme-route-shadow {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "transfluxo-app-v8";
+const CACHE_NAME = "transfluxo-app-v9";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -12,6 +12,7 @@ const APP_SHELL = [
   "/Design%20system/tokens.css",
   "/assets/brand-logo-source.png",
   "/assets/brand-symbol.png",
+  "/assets/data/brazil-map-data.js",
   "/assets/design-options/atlas.png",
   "/assets/design-options/pulse.png",
   "/assets/design-options/journey.png",
